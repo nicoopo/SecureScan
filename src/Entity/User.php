@@ -56,6 +56,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OrderBy(['createdAt' => 'DESC'])]
     private Collection $projects;
 
+    #[ORM\Column]
+    private bool $isVerified = false;
+
     public function __construct()
     {
         $this->projects  = new ArrayCollection();
@@ -141,6 +144,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->projects->removeElement($project) && $project->getOwner() === $this) {
             $project->setOwner(null);
         }
+        return $this;
+    }
+
+    public function isVerified(): bool
+    {
+        return $this->isVerified;
+    }
+
+    public function setIsVerified(bool $isVerified): static
+    {
+        $this->isVerified = $isVerified;
+
         return $this;
     }
 }
