@@ -9,3 +9,19 @@
 
 controllers:
     resource: routing.controllers
+
+app_home:
+    path: /
+    controller: App\Controller\HomeController::index
+
+app_login:
+    path: /login
+    controller: App\Controller\LoginController::index
+
+app_register:
+    path: /register
+    controller: App\Controller\RegisterController::index
+
+app_forgot_password:
+    path: /forgot-password
+    controller: App\Controller\ForgotPasswordController::index
