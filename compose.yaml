@@ -17,6 +17,7 @@ services:
     volumes:
       - .:/var/www/html
       - vendor_data:/var/www/html/vendor
+      - cache_data:/var/www/html/var/cache
       - uploads_data:/var/www/html/var/uploads
     depends_on:
       database:
@@ -87,6 +88,7 @@ services:
 volumes:
   vendor_data:
   uploads_data:
+  cache_data:
   database_data:
 
 networks:
