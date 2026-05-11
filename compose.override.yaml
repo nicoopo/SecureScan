@@ -1,18 +1,32 @@
-
 services:
-###> doctrine/doctrine-bundle ###
+
+  app:
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: "1"
+      XDEBUG_MODE: ${XDEBUG_MODE:-off}
+      XDEBUG_CONFIG: >-
+        client_host=host.docker.internal
+        client_port=9003
+        idekey=PHPSTORM
+
+  worker:
+    command: php bin/console messenger:consume async -vv
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: "1"
+
   database:
     ports:
-      - "5432"
-###< doctrine/doctrine-bundle ###
+      - "3306:3306"
 
-###> symfony/mailer ###
   mailer:
     image: axllent/mailpit
     ports:
-      - "1025"
-      - "8025"
+      - "1025:1025"
+      - "8025:8025"
     environment:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
-###< symfony/mailer ###
+    networks:
+      - securescan

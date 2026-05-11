@@ -1,25 +1,94 @@
-
 services:
-###> doctrine/doctrine-bundle ###
-  database:
-    image: postgres:${POSTGRES_VERSION:-16}-alpine
+
+  # ── PHP-FPM / Symfony ────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    container_name: securescan_app
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      # You should definitely change the password in production
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
+      APP_ENV: ${APP_ENV:-dev}
+      APP_SECRET: ${APP_SECRET:-changeme}
+      DATABASE_URL: mysql://${MYSQL_USER:-app}:${MYSQL_PASSWORD:-!ChangeMe!}@database:3306/${MYSQL_DATABASE:-app}?serverVersion=8.0&charset=utf8mb4
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      MESSENGER_TRANSPORT_DSN: doctrine://default?auto_setup=0
+    volumes:
+      - .:/var/www/html
+      - vendor_data:/var/www/html/vendor
+      - uploads_data:/var/www/html/var/uploads
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - securescan
+
+  # ── Nginx ─────────────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: securescan_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - securescan
+
+  # ── Messenger worker (scans async) ───────────────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    container_name: securescan_worker
+    restart: unless-stopped
+    command: php bin/console messenger:consume async --limit=50 --time-limit=3600 -vv
+    environment:
+      APP_ENV: ${APP_ENV:-dev}
+      APP_SECRET: ${APP_SECRET:-changeme}
+      DATABASE_URL: mysql://${MYSQL_USER:-app}:${MYSQL_PASSWORD:-!ChangeMe!}@database:3306/${MYSQL_DATABASE:-app}?serverVersion=8.0&charset=utf8mb4
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      MESSENGER_TRANSPORT_DSN: doctrine://default?auto_setup=0
+    volumes:
+      - .:/var/www/html
+      - vendor_data:/var/www/html/vendor
+      - uploads_data:/var/www/html/var/uploads
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - securescan
+
+  # ── MySQL ─────────────────────────────────────────────────────────────────
+  database:
+    image: mysql:${MYSQL_VERSION:-8.0}
+    container_name: securescan_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-app}
+      MYSQL_USER: ${MYSQL_USER:-app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-!ChangeMe!}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
     healthcheck:
-      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-app}", "-U", "${POSTGRES_USER:-app}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_USER:-app}", "-p${MYSQL_PASSWORD:-!ChangeMe!}"]
       timeout: 5s
       retries: 5
       start_period: 60s
     volumes:
-      - database_data:/var/lib/postgresql/data:rw
-      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
-###< doctrine/doctrine-bundle ###
+      - database_data:/var/lib/mysql:rw
+    networks:
+      - securescan
 
 volumes:
-###> doctrine/doctrine-bundle ###
+  vendor_data:
+  uploads_data:
   database_data:
-###< doctrine/doctrine-bundle ###
+
+networks:
+  securescan:
+    driver: bridge
