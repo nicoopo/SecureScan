@@ -6,6 +6,7 @@ use App\Entity\Project;
 use App\Entity\User;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
+use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 
 /**
  * Garantit qu'un utilisateur ne peut accéder qu'à ses propres projets.
@@ -27,7 +28,7 @@ class ProjectVoter extends Voter
             && in_array($attribute, [self::VIEW, self::EDIT, self::DELETE, self::SCAN], true);
     }
 
-    protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
+    protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
     {
         $user = $token->getUser();
 
