@@ -41,6 +41,7 @@
         "symfony/validator": "8.0.*",
         "symfony/web-link": "8.0.*",
         "symfony/yaml": "8.0.*",
+        "symfonycasts/verify-email-bundle": "^1.18",
         "twig/extra-bundle": "^2.12|^3.24",
         "twig/twig": "^2.12|^3.24"
     },
@@ -98,6 +99,7 @@
         }
     },
     "require-dev": {
+        "doctrine/doctrine-fixtures-bundle": "^4.3",
         "phpunit/phpunit": "^13.1.8",
         "symfony/browser-kit": "8.0.*",
         "symfony/css-selector": "8.0.*",
