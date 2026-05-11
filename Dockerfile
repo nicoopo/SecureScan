@@ -50,6 +50,9 @@ RUN apk add --no-cache \
     && docker-php-ext-enable apcu \
     && apk del .build-deps
 
+
+# Copier Composer depuis l'image officielle
+COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 # ── Semgrep (SAST) ────────────────────────────────────────────────────────────
 RUN pip3 install semgrep --break-system-packages
 
