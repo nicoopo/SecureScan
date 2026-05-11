@@ -1,0 +1,12 @@
+{% extends 'base.html.twig' %}
+{% block title %}Accueil{% endblock %}
+{% block body %}
+    <h1>Bienvenue sur SecureScan</h1>
+    {% if app.user %}
+        <p>Bonjour {{ app.user.fullName }} !</p>
+        <a href="{{ path('app_logout') }}">Se déconnecter</a>
+    {% else %}
+        <a href="{{ path('app_login') }}">Se connecter</a>
+        <a href="{{ path('app_register') }}">S'inscrire</a>
+    {% endif %}
+{% endblock %}
