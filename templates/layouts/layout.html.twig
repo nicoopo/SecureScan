@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SecureScan{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen flex flex-col">
+    {% include 'layouts/header.html.twig' %}
+    <main class="flex flex-1 flex-col items-center justify-center bg-gradient-to-r from-neutral-300 to-stone-400">
+        {% block content %}{% endblock %}
+    </main>
+    {% include 'layouts/footer.html.twig' %}
+</body>
+</html>
