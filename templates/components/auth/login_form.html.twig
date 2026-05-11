@@ -1,0 +1,30 @@
+<div class="flex flex-col gap-6">
+    <div class="bg-white border border-gray-200 rounded-lg shadow p-6">
+        <div class="mb-4">
+            <h2 class="text-lg font-semibold">Login to your account</h2>
+            <p class="text-sm text-gray-600">Enter your email below to login to your account</p>
+        </div>
+        <div>
+            <form method="post">
+                <div class="space-y-4">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input id="email" name="_username" type="email" placeholder="m@example.com" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500" />
+                    </div>
+                    <div>
+                        <div class="flex items-center">
+                            <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                            <a href="/forgot-password" class="ml-auto inline-block text-sm underline-offset-4 hover:underline">Forgot your password?</a>
+                        </div>
+                        <input id="password" name="_password" type="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500" />
+                    </div>
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}" />
+                    <div class="space-y-2">
+                        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Login</button>
+                        <p class="text-center text-sm text-gray-600">Don't have an account? <a href="/register" class="underline underline-offset-4 hover:underline">Sign up</a></p>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
