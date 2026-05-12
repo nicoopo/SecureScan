@@ -187,4 +187,8 @@ class Scan
     public function isDone(): bool    { return $this->status === self::STATUS_DONE; }
     public function isPending(): bool { return $this->status === self::STATUS_PENDING; }
     public function isFailed(): bool  { return $this->status === self::STATUS_FAILED; }
+public function __toString(): string
+{
+    return 'Scan #' . $this->id;
+}
 }
