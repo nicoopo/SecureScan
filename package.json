@@ -1,0 +1,30 @@
+{
+  "name": "securescan",
+  "version": "1.0.0",
+  "description": "Projet Symfony - Guide Git & Docker pour l'équipe",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build-css": "tailwindcss -i ./assets/styles/app.css -o ./assets/app.css --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicoopo/SecureScan.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/nicoopo/SecureScan/issues"
+  },
+  "homepage": "https://github.com/nicoopo/SecureScan#readme",
+  "devDependencies": {
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^3.4.19"
+  }
+}
