@@ -163,23 +163,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /** @return Collection<int, Scan> */
-    public function getScans(): Collection { return $this->scans; }
-
-    public function addScan(Scan $scan): static
-    {
-        if (!$this->scans->contains($scan)) {
-            $this->scans->add($scan);
-            $scan->setUser($this);
-        }
-        return $this;
-    }
-
-    public function removeScan(Scan $scan): static
-    {
-        if ($this->scans->removeElement($scan) && $scan->getUser() === $this) {
-            $scan->setUser(null);
-        }
-        return $this;
-    }
+    public function __toString(): string
+{
+    return $this->fullName ?: $this->email;
+}
 }
