@@ -1,37 +1,58 @@
-<div class="flex flex-col gap-6">
-    <div class="bg-white border border-gray-200 rounded-lg shadow p-6">
-        <div class="mb-4">
-            <h2 class="text-lg font-semibold">Create an account</h2>
-            <p class="text-sm text-gray-600">Enter your information below to create your account</p>
-        </div>
-        <div>
-            <form method="post" action="/register">
-                <div class="space-y-4">
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                        <input id="email" name="email" type="email" placeholder="m@example.com" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500" />
-                        <p class="text-sm text-gray-500">We'll use this to contact you. We will not share your email with anyone else.</p>
-                    </div>
-                    <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
-                        <input id="username" name="username" type="text" placeholder="John Doe" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500" />
-                    </div>
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <input id="password" name="password" type="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500" />
-                        <p class="text-sm text-gray-500">Must be at least 8 characters long.</p>
-                    </div>
-                    <div>
-                        <label for="confirm-password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
-                        <input id="confirm-password" name="confirm_password" type="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500" />
-                        <p class="text-sm text-gray-500">Please confirm your password.</p>
-                    </div>
-                    <div class="space-y-2">
-                        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Create Account</button>
-                        <p class="text-center text-sm text-gray-600">Already have an account? <a href="/login" class="underline underline-offset-4 hover:underline">Sign in</a></p>
-                    </div>
-                </div>
-            </form>
-        </div>
+<form class="flex flex-col gap-6" method="post">
+  <div class="flex flex-col items-center gap-1 text-center">
+    <h1 class="text-2xl font-bold">Create your account</h1>
+    <p class="text-sm text-balance text-muted-foreground">
+      Fill in the form below to create your account
+    </p>
+  </div>
+  {{ form_errors(registrationForm) }}
+  <div class="space-y-4">
+    <div>
+      <label for="{{ registrationForm.fullName.vars.id }}" class="block text-sm font-medium mb-2">Full Name</label>
+      {{ form_widget(registrationForm.fullName, {
+        attr: { class: 'w-full rounded-md border px-3 py-2 text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-900' }
+      }) }}
+      {{ form_errors(registrationForm.fullName) }}
     </div>
-</div>
+    <div>
+      <label for="{{ registrationForm.email.vars.id }}" class="block text-sm font-medium mb-2">Email</label>
+      {{ form_widget(registrationForm.email, {
+        attr: { class: 'w-full rounded-md border px-3 py-2 text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-900' }
+      }) }}
+      <p class="text-sm text-muted-foreground mt-1">
+        We'll use this to contact you. We will not share your email with anyone else.
+      </p>
+      {{ form_errors(registrationForm.email) }}
+    </div>
+    <div>
+      <label for="{{ registrationForm.plainPassword.vars.id }}" class="block text-sm font-medium mb-2">Password</label>
+      {{ form_widget(registrationForm.plainPassword, {
+        attr: { class: 'w-full rounded-md border px-3 py-2 text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-900' }
+      }) }}
+      <p class="text-sm text-muted-foreground mt-1">
+        Must be at least 8 characters long.
+      </p>
+      {{ form_errors(registrationForm.plainPassword) }}
+    </div>
+    <div>
+      <label for="confirm-password" class="block text-sm font-medium mb-2">Confirm Password</label>
+      <input id="confirm-password" name="confirm_password" type="password" required class="w-full rounded-md border px-3 py-2 text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-900" />
+      <p class="text-sm text-muted-foreground mt-1">Please confirm your password.</p>
+    </div>
+      <div class="flex items-center space-x-2">
+          {{ form_widget(registrationForm.agreeTerms, {
+              attr: { class: 'rounded border focus:ring-2 focus:ring-blue-900' }
+          }) }}
+          <label for="{{ registrationForm.agreeTerms.vars.id }}" class="text-sm font-medium">
+              {{ form_label(registrationForm.agreeTerms) }}
+          </label>
+      </div>
+      {{ form_errors(registrationForm.agreeTerms) }}
+      <div class="space-y-2">
+          <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Create Account</button>
+          <p class="text-center text-sm text-gray-600">Already have an account? <a href="/login" class="underline underline-offset-4 hover:underline">Sign in</a></p>
+      </div>
+  </div>
+  {{ form_rest(registrationForm) }}
+</form>
+

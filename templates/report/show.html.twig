@@ -1,0 +1,181 @@
+{% extends 'layouts/layout.html.twig' %}
+
+{% block title %}Rapport — {{ scan.project.name }}{% endblock %}
+
+{% block content %}
+    <div class="w-full max-w-6xl mx-auto px-4 py-10">
+
+        {# Header #}
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-2xl font-semibold text-gray-900">{{ scan.project.name }}</h1>
+                <p class="text-sm text-gray-500 mt-1">{{ scan.project.repositoryUrl }}</p>
+                <p class="text-xs text-gray-400 mt-1">Scan du {{ scan.startedAt|date('d/m/Y à H:i') }}</p>
+            </div>
+            <div class="flex gap-2">
+                <a href="{{ path('app_scan_new') }}"
+                   class="border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Nouveau scan
+                </a>
+                <a href="{{ path('report_pdf', {id: scan.id}) }}"
+                   class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Télécharger PDF
+                </a>
+            </div>
+        </div>
+
+        {# Metric cards #}
+        {% set counts = scan.countBySeverity() %}
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-xs text-gray-500 mb-1">Score</p>
+                <p class="text-3xl font-semibold
+                {% if scan.grade == 'A' %}text-green-700
+                {% elseif scan.grade == 'B' %}text-blue-700
+                {% elseif scan.grade == 'C' %}text-yellow-700
+                {% elseif scan.grade == 'D' %}text-orange-700
+                {% else %}text-red-700{% endif %}">
+                    {{ scan.score ?? 0 }}/100
+                </p>
+                <p class="text-xs text-gray-400 mt-1">Grade {{ scan.grade ?? '—' }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-xs text-gray-500 mb-1">Critique</p>
+                <p class="text-3xl font-semibold text-red-600">{{ counts['critical'] ?? 0 }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-xs text-gray-500 mb-1">Haute</p>
+                <p class="text-3xl font-semibold text-orange-500">{{ counts['high'] ?? 0 }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-xs text-gray-500 mb-1">Moyenne</p>
+                <p class="text-3xl font-semibold text-blue-600">{{ counts['medium'] ?? 0 }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-xs text-gray-500 mb-1">Total</p>
+                <p class="text-3xl font-semibold text-gray-900">{{ scan.findings|length }}</p>
+            </div>
+        </div>
+
+        {# Graphiques #}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div class="bg-white border border-gray-200 rounded-xl p-5">
+                <h2 class="text-sm font-semibold text-gray-900 mb-4">Répartition par sévérité</h2>
+                <div class="flex flex-wrap gap-3 mb-3 text-xs text-gray-500">
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block"></span>Critique</span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-orange-400 inline-block"></span>Haute</span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block"></span>Moyenne</span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-green-500 inline-block"></span>Basse</span>
+                </div>
+                <div style="height: 200px">
+                    {{ render_chart(chartSeverity) }}
+                </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-xl p-5">
+                <h2 class="text-sm font-semibold text-gray-900 mb-4">Distribution OWASP Top 10</h2>
+                <div style="height: 260px">
+                    {{ render_chart(chartOwasp) }}
+                </div>
+            </div>
+        </div>
+
+        {# Table des findings #}
+        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <h2 class="text-sm font-semibold text-gray-900">Findings détectés</h2>
+                <div class="flex gap-2">
+                    <select id="filterSev" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 text-gray-700">
+                        <option value="">Toutes sévérités</option>
+                        <option value="critical">Critique</option>
+                        <option value="high">Haute</option>
+                        <option value="medium">Moyenne</option>
+                        <option value="low">Basse</option>
+                    </select>
+                    <select id="filterOwasp" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 text-gray-700">
+                        <option value="">Toutes catégories</option>
+                        {% for code, label in constant('App\\Entity\\Finding::OWASP_LABELS') %}
+                            <option value="{{ code }}">{{ code }} — {{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <select id="filterTool" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 text-gray-700">
+                        <option value="">Tous les outils</option>
+                        <option value="semgrep">Semgrep</option>
+                        <option value="npm_audit">npm audit</option>
+                        <option value="trufflehog">TruffleHog</option>
+                        <option value="eslint">ESLint</option>
+                        <option value="phpstan">PHPStan</option>
+                    </select>
+                </div>
+            </div>
+            <table class="w-full text-xs">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="text-left px-4 py-3 text-gray-500 font-medium">Fichier</th>
+                    <th class="text-left px-4 py-3 text-gray-500 font-medium">Ligne</th>
+                    <th class="text-left px-4 py-3 text-gray-500 font-medium">Titre</th>
+                    <th class="text-left px-4 py-3 text-gray-500 font-medium">Sévérité</th>
+                    <th class="text-left px-4 py-3 text-gray-500 font-medium">OWASP</th>
+                    <th class="text-left px-4 py-3 text-gray-500 font-medium">Outil</th>
+                    <th class="text-left px-4 py-3 text-gray-500 font-medium">Fix</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                {% for finding in scan.findings %}
+                    <tr class="hover:bg-gray-50 finding-row"
+                        data-severity="{{ finding.severity }}"
+                        data-owasp="{{ finding.owaspCategory }}"
+                        data-tool="{{ finding.tool }}">
+                        <td class="px-4 py-3 font-mono text-gray-600" title="{{ finding.filePath }}">
+                            {{ finding.filePath ? finding.filePath|split('/')|last : '—' }}
+                        </td>
+                        <td class="px-4 py-3 text-gray-400">{{ finding.line ?? '—' }}</td>
+                        <td class="px-4 py-3 text-gray-800">{{ finding.title }}</td>
+                        <td class="px-4 py-3">
+                        <span class="px-2 py-0.5 rounded text-xs font-medium
+                            {% if finding.severity == 'critical' %}bg-red-100 text-red-800
+                            {% elseif finding.severity == 'high' %}bg-orange-100 text-orange-800
+                            {% elseif finding.severity == 'medium' %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-green-100 text-green-800{% endif %}">
+                            {{ finding.severity }}
+                        </span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-500">{{ finding.owaspCategory }}</td>
+                        <td class="px-4 py-3 text-gray-400">{{ finding.tool }}</td>
+                        <td class="px-4 py-3">
+                            {% if finding.hasPendingFix() %}
+                                <a href="#" class="text-blue-600 hover:underline">Voir fix</a>
+                            {% elseif finding.acceptedFix %}
+                                <span class="text-green-600">Appliqué</span>
+                            {% else %}
+                                <span class="text-gray-300">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        ['filterSev', 'filterOwasp', 'filterTool'].forEach(id => {
+            document.getElementById(id).addEventListener('change', () => {
+                const sev   = document.getElementById('filterSev').value;
+                const owasp = document.getElementById('filterOwasp').value;
+                const tool  = document.getElementById('filterTool').value;
+                document.querySelectorAll('.finding-row').forEach(row => {
+                    const show =
+                        (!sev   || row.dataset.severity === sev)  &&
+                        (!owasp || row.dataset.owasp    === owasp) &&
+                        (!tool  || row.dataset.tool     === tool);
+                    row.style.display = show ? '' : 'none';
+                });
+            });
+        });
+    </script>
+{% endblock %}

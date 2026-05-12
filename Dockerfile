@@ -63,7 +63,6 @@ RUN curl -sSfL \
 
 # Config PHP
 COPY docker/php/php.ini     /usr/local/etc/php/conf.d/securescan.ini
-COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 WORKDIR /var/www/html
 

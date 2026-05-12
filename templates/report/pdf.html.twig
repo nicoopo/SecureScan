@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #333; margin: 0; padding: 20px; }
+        h1 { font-size: 20px; color: #1a1a1a; border-bottom: 2px solid #dc2626; padding-bottom: 8px; }
+        h2 { font-size: 14px; color: #1a1a1a; margin-top: 24px; margin-bottom: 8px; }
+        .meta { color: #666; font-size: 10px; margin-bottom: 24px; }
+        .score { font-size: 32px; font-weight: bold; }
+        .score-good { color: #16a34a; }
+        .score-medium { color: #ca8a04; }
+        .score-bad { color: #dc2626; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th { background: #1e1e2e; color: #fff; padding: 7px 10px; text-align: left; font-size: 10px; }
+        td { border-bottom: 1px solid #e5e7eb; padding: 6px 10px; font-size: 10px; }
+        tr:nth-child(even) td { background: #f9fafb; }
+        .badge { padding: 2px 7px; border-radius: 4px; font-size: 9px; font-weight: bold; }
+        .critical { background: #fee2e2; color: #991b1b; }
+        .high     { background: #ffedd5; color: #9a3412; }
+        .medium   { background: #fef9c3; color: #854d0e; }
+        .low      { background: #dcfce7; color: #166534; }
+        .summary-grid { display: table; width: 100%; margin-bottom: 16px; }
+        .summary-cell { display: table-cell; width: 25%; text-align: center; padding: 10px; border: 1px solid #e5e7eb; }
+        .summary-num { font-size: 22px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h1>Rapport de sécurité — SecureScan</h1>
+<div class="meta">
+    <strong>Projet :</strong> {{ scan.project.repositoryUrl }} &nbsp;|&nbsp;
+    <strong>Date :</strong> {{ scan.startedAt|date('d/m/Y à H:i') }} &nbsp;|&nbsp;
+    <strong>Langage :</strong> {{ scan.project.language ?? 'N/A' }}
+</div>
+
+<h2>Score global</h2>
+{% set score = scan.score ?? 0 %}
+<span class="score {% if score >= 80 %}score-good{% elseif score >= 50 %}score-medium{% else %}score-bad{% endif %}">
+    {{ score }}/100
+</span>
+
+<h2>Résumé</h2>
+<div class="summary-grid">
+    <div class="summary-cell">
+        <div class="summary-num" style="color:#dc2626">{{ scan.findings|filter(f => f.severity == 'critical')|length }}</div>
+        <div>Critique</div>
+    </div>
+    <div class="summary-cell">
+        <div class="summary-num" style="color:#ea580c">{{ scan.findings|filter(f => f.severity == 'high')|length }}</div>
+        <div>Haute</div>
+    </div>
+    <div class="summary-cell">
+        <div class="summary-num" style="color:#ca8a04">{{ scan.findings|filter(f => f.severity == 'medium')|length }}</div>
+        <div>Moyenne</div>
+    </div>
+    <div class="summary-cell">
+        <div class="summary-num" style="color:#16a34a">{{ scan.findings|filter(f => f.severity == 'low')|length }}</div>
+        <div>Basse</div>
+    </div>
+</div>
+
+<h2>Vulnérabilités détectées</h2>
+{% if scan.findings is empty %}
+    <p>Aucune vulnérabilité détectée.</p>
+{% else %}
+    <table>
+        <thead>
+        <tr>
+            <th style="width:30%">Fichier</th>
+            <th style="width:5%">Ligne</th>
+            <th style="width:40%">Description</th>
+            <th style="width:10%">Sévérité</th>
+            <th style="width:15%">OWASP</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for finding in scan.findings %}
+            <tr>
+                <td style="font-family: monospace">{{ finding.filePath }}</td>
+                <td>{{ finding.line }}</td>
+                <td>{{ finding.description }}</td>
+                <td><span class="badge {{ finding.severity }}">{{ finding.severity|upper }}</span></td>
+                <td>{{ finding.owaspCategory }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+{% if scan.fixBranch %}
+    <h2>Corrections appliquées</h2>
+    <p>Branche Git créée : <strong>{{ scan.fixBranch }}</strong></p>
+{% endif %}
+
+</body>
+</html>

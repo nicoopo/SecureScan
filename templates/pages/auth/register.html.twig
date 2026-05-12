@@ -1,9 +1,15 @@
-{% extends 'layouts/layout.html.twig' %}
-
-{% block content %}
-<div class="flex w-full items-center justify-center p-6 md:p-10">
-    <div class="w-full max-w-sm">
-        {% include 'components/auth/signup_form.html.twig' %}
-    </div>
-</div>
+{% extends 'layouts/authLayout.html.twig' %}
+{% block title %}Register{% endblock %}
+{% block auth_content %}
+{% for flash_error in app.flashes('verify_email_error') %}
+  <div class="alert alert-danger mb-4" role="alert">{{ flash_error }}</div>
+{% endfor %}
+{% for label, messages in app.flashes %}
+  {% if label == 'danger' or label == 'error' %}
+    {% for message in messages %}
+      <div class="alert alert-danger mb-4" role="alert">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endfor %}
+{% include 'components/auth/signup_form.html.twig' %}
 {% endblock %}
