@@ -56,6 +56,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OrderBy(['createdAt' => 'DESC'])]
     private Collection $projects;
 
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Scan::class)]
+    private Collection $scans;
+
     #[ORM\Column]
     private bool $isVerified = false;
 
@@ -63,6 +66,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->projects  = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
+        $this->scans     = new ArrayCollection();
     }
 
     #[ORM\PreUpdate]
@@ -156,6 +160,26 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->isVerified = $isVerified;
 
+        return $this;
+    }
+
+    /** @return Collection<int, Scan> */
+    public function getScans(): Collection { return $this->scans; }
+
+    public function addScan(Scan $scan): static
+    {
+        if (!$this->scans->contains($scan)) {
+            $this->scans->add($scan);
+            $scan->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeScan(Scan $scan): static
+    {
+        if ($this->scans->removeElement($scan) && $scan->getUser() === $this) {
+            $scan->setUser(null);
+        }
         return $this;
     }
 }
