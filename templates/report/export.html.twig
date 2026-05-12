@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport SecureScan — {{ scan.project.name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .page-break { page-break-before: always; }
+        }
+        body { font-family: system-ui, sans-serif; }
+    </style>
+</head>
+<body class="bg-white text-gray-900">
+
+{# Barre d'actions (masquée à l'impression) #}
+<div class="no-print bg-gray-900 text-white px-6 py-3 flex items-center justify-between text-sm sticky top-0 z-10">
+    <span class="font-medium">SecureScan — Export HTML</span>
+    <div class="flex gap-3">
+        <button onclick="window.print()"
+                class="bg-white text-gray-900 px-3 py-1.5 rounded text-xs font-medium hover:bg-gray-100">
+            Imprimer / Sauvegarder en PDF
+        </button>
+        <a href="{{ path('report_show', {id: scan.id}) }}"
+           class="text-gray-400 hover:text-white px-3 py-1.5 rounded text-xs">
+            ← Retour
+        </a>
+    </div>
+</div>
+
+<div class="max-w-5xl mx-auto px-8 py-10">
+
+    {# En-tête du rapport #}
+    <div class="border-b border-gray-200 pb-6 mb-8">
+        <div class="flex items-start justify-between">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <span class="text-xs font-semibold tracking-widest text-gray-400 uppercase">SecureScan</span>
+                    <span class="text-xs text-gray-300">•</span>
+                    <span class="text-xs text-gray-400">Rapport de sécurité</span>
+                </div>
+                <h1 class="text-2xl font-semibold text-gray-900">{{ scan.project.name }}</h1>
+                <p class="text-sm text-gray-500 mt-1">{{ scan.project.repositoryUrl }}</p>
+            </div>
+            <div class="text-right text-xs text-gray-400">
+                <p>Scan démarré le</p>
+                <p class="font-medium text-gray-600">{{ scan.startedAt|date('d/m/Y à H:i') }}</p>
+                {% if scan.finishedAt %}
+                    <p class="mt-1">Terminé le</p>
+                    <p class="font-medium text-gray-600">{{ scan.finishedAt|date('d/m/Y à H:i') }}</p>
+                {% endif %}
+                {% if scan.fixBranch %}
+                    <p class="mt-2 font-mono text-gray-500">{{ scan.fixBranch }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Score + métriques #}
+    {% set counts = scan.countBySeverity() %}
+    <div class="grid grid-cols-5 gap-4 mb-10">
+        <div class="col-span-1 border border-gray-200 rounded-xl p-5 text-center">
+            <p class="text-xs text-gray-400 mb-2 uppercase tracking-wide">Score</p>
+            <p class="text-5xl font-bold
+                    {% if scan.grade == 'A' %}text-green-600
+                    {% elseif scan.grade == 'B' %}text-blue-600
+                    {% elseif scan.grade == 'C' %}text-yellow-600
+                    {% elseif scan.grade == 'D' %}text-orange-600
+                    {% else %}text-red-600{% endif %}">
+                {{ scan.grade ?? '—' }}
+            </p>
+            <p class="text-sm text-gray-400 mt-1">{{ scan.score ?? 0 }} / 100</p>
+        </div>
+        <div class="col-span-4 grid grid-cols-4 gap-3">
+            <div class="bg-red-50 border border-red-100 rounded-xl p-4">
+                <p class="text-xs text-red-400 mb-1">Critique</p>
+                <p class="text-3xl font-bold text-red-600">{{ counts['critical'] ?? 0 }}</p>
+            </div>
+            <div class="bg-orange-50 border border-orange-100 rounded-xl p-4">
+                <p class="text-xs text-orange-400 mb-1">Haute</p>
+                <p class="text-3xl font-bold text-orange-500">{{ counts['high'] ?? 0 }}</p>
+            </div>
+            <div class="bg-yellow-50 border border-yellow-100 rounded-xl p-4">
+                <p class="text-xs text-yellow-500 mb-1">Moyenne</p>
+                <p class="text-3xl font-bold text-yellow-600">{{ counts['medium'] ?? 0 }}</p>
+            </div>
+            <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                <p class="text-xs text-gray-400 mb-1">Basse</p>
+                <p class="text-3xl font-bold text-gray-600">{{ counts['low'] ?? 0 }}</p>
+            </div>
+        </div>
+    </div>
+
+    {# Répartition OWASP (tableau statique, pas de chart JS pour l'impression) #}
+    {% set owaspCounts = scan.countByOwasp() %}
+    {% if owaspCounts is not empty %}
+        <div class="mb-10">
+            <h2 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Distribution OWASP Top 10</h2>
+            <div class="border border-gray-200 rounded-xl overflow-hidden">
+                <table class="w-full text-xs">
+                    <thead class="bg-gray-50">
+                    <tr>
+                        <th class="text-left px-4 py-2.5 text-gray-500 font-medium">Catégorie</th>
+                        <th class="text-left px-4 py-2.5 text-gray-500 font-medium">Findings</th>
+                        <th class="px-4 py-2.5 w-48"></th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                    {% set maxCount = owaspCounts|reduce((carry, v) => v > carry ? v : carry, 0) %}
+                    {% for code, count in owaspCounts|filter(c => c > 0) %}
+                        <tr>
+                            <td class="px-4 py-2.5 font-medium text-gray-700">{{ code }}</td>
+                            <td class="px-4 py-2.5 text-gray-500">{{ count }}</td>
+                            <td class="px-4 py-2.5">
+                                <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-red-400 rounded-full"
+                                         style="width: {{ (count / maxCount * 100)|round }}%"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    {# Corrections appliquées #}
+    {% set acceptedFindings = scan.findings|filter(f => f.acceptedFix is not null) %}
+    {% if acceptedFindings|length > 0 %}
+        <div class="mb-10">
+            <h2 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+                Corrections appliquées ({{ acceptedFindings|length }})
+            </h2>
+            <div class="border border-green-200 rounded-xl overflow-hidden">
+                <table class="w-full text-xs">
+                    <thead class="bg-green-50">
+                    <tr>
+                        <th class="text-left px-4 py-2.5 text-green-700 font-medium">Fichier</th>
+                        <th class="text-left px-4 py-2.5 text-green-700 font-medium">Vulnérabilité</th>
+                        <th class="text-left px-4 py-2.5 text-green-700 font-medium">OWASP</th>
+                        <th class="text-left px-4 py-2.5 text-green-700 font-medium">Statut</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-green-100">
+                    {% for finding in acceptedFindings %}
+                        <tr>
+                            <td class="px-4 py-2.5 font-mono text-gray-600">
+                                {{ finding.filePath ? finding.filePath|split('/')|last : '—' }}
+                            </td>
+                            <td class="px-4 py-2.5 text-gray-700">{{ finding.title }}</td>
+                            <td class="px-4 py-2.5 text-gray-500">{{ finding.owaspCategory }}</td>
+                            <td class="px-4 py-2.5">
+                                <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded font-medium">Appliqué</span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    {# Table complète des findings — saut de page si > 20 findings #}
+    <div class="{{ scan.findings|length > 20 ? 'page-break' : '' }}">
+        <h2 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+            Tous les findings ({{ scan.findings|length }})
+        </h2>
+        <div class="border border-gray-200 rounded-xl overflow-hidden">
+            <table class="w-full text-xs">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-4 py-2.5 text-gray-500 font-medium">Fichier</th>
+                    <th class="text-left px-4 py-2.5 text-gray-500 font-medium">Ligne</th>
+                    <th class="text-left px-4 py-2.5 text-gray-500 font-medium">Titre</th>
+                    <th class="text-left px-4 py-2.5 text-gray-500 font-medium">Sévérité</th>
+                    <th class="text-left px-4 py-2.5 text-gray-500 font-medium">OWASP</th>
+                    <th class="text-left px-4 py-2.5 text-gray-500 font-medium">Outil</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                {% for finding in findings %}
+                    <tr>
+                        <td class="px-4 py-2.5 font-mono text-gray-600"
+                            title="{{ finding.filePath }}">
+                            {{ finding.filePath ? finding.filePath|split('/')|last : '—' }}
+                        </td>
+                        <td class="px-4 py-2.5 text-gray-400">{{ finding.line ?? '—' }}</td>
+                        <td class="px-4 py-2.5 text-gray-800">{{ finding.title }}</td>
+                        <td class="px-4 py-2.5">
+                                <span class="px-2 py-0.5 rounded font-medium
+                                    {% if finding.severity == 'critical' %}bg-red-100 text-red-700
+                                    {% elseif finding.severity == 'high' %}bg-orange-100 text-orange-700
+                                    {% elseif finding.severity == 'medium' %}bg-yellow-100 text-yellow-700
+                                    {% else %}bg-gray-100 text-gray-600{% endif %}">
+                                    {{ finding.severity }}
+                                </span>
+                        </td>
+                        <td class="px-4 py-2.5 text-gray-500">{{ finding.owaspCategory }}</td>
+                        <td class="px-4 py-2.5 text-gray-400">{{ finding.tool }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# Pied de page #}
+    <div class="mt-10 pt-6 border-t border-gray-100 text-xs text-gray-400 flex justify-between">
+        <span>Généré par SecureScan — CyberSafe Solutions</span>
+        <span>{{ "now"|date('d/m/Y à H:i') }}</span>
+    </div>
+
+</div>
+</body>
+</html>

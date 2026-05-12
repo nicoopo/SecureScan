@@ -188,6 +188,8 @@ class Scan
     public function getReport(): ?ScanReport { return $this->report; }
     public function setReport(?ScanReport $report): static { $this->report = $report; return $this; }
 
+    public function getUser(): ?User { return $this->user; }
+    public function setUser(?User $user): static { $this->user = $user; return $this; }
     public function isDone(): bool    { return $this->status === self::STATUS_DONE; }
     public function isPending(): bool { return $this->status === self::STATUS_PENDING; }
     public function isFailed(): bool  { return $this->status === self::STATUS_FAILED; }
