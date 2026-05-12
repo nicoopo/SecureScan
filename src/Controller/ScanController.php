@@ -8,21 +8,19 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Service\ScanOrchestrator;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class ScanController extends AbstractController
 {
     #[Route('/scan/new', name: 'app_scan_new')]
-    public function new(Request $request, EntityManagerInterface $em): Response
+    public function new(Request $request, EntityManagerInterface $em, ScanOrchestrator $scanOrchestrator): Response
     {
         $project = new Project();
         $form = $this->createForm(ProjectType::class, $project);
         $form->handleRequest($request);
-
         if ($form->isSubmitted() && $form->isValid()) {
             $project->setOwner($this->getUser());
-
-            // Gestion ZIP
             $zipFile = $form->get('zipFile')->getData();
             if ($zipFile) {
                 $project->setSource(Project::SOURCE_ZIP);
@@ -30,17 +28,14 @@ final class ScanController extends AbstractController
                 $zipFile->move('/var/www/html/var/uploads/', basename($zipPath));
                 $project->setZipPath($zipPath);
             }
-
             $scan = new Scan();
             $project->addScan($scan);
-
             $em->persist($project);
             $em->persist($scan);
             $em->flush();
-
+            $scanOrchestrator->run($scan);
             return $this->redirectToRoute('app_scan_detail', ['id' => $scan->getId()]);
         }
-
         return $this->render('scan/new.html.twig', [
             'form' => $form,
         ]);

@@ -5,21 +5,12 @@ namespace App\Service\Analyzer;
 use App\Entity\Finding;
 use App\Entity\Scan;
 
-/**
- * Analyseur OWASP A02 - Security Misconfiguration.
- * Détecte : mode debug actif, phpinfo(), secrets par défaut, display_errors, etc.
- */
 class A02Analyzer
 {
     private const TOOL = 'securescan';
 
-    /** Extensions inspectées (les fichiers .env sont gérés séparément via isEnvFile). */
     private const EXTENSIONS = ['php', 'yaml', 'yml', 'xml', 'ini', 'js', 'ts'];
 
-    /**
-     * Patterns détectés — chaque entrée décrit une règle statique.
-     * `extensions` : types de fichiers concernés ; 'env' cible les fichiers .env*.
-     */
     private const PATTERNS = [
         [
             'id'          => 'a02.debug.app_debug_true',
@@ -87,11 +78,6 @@ class A02Analyzer
         ],
     ];
 
-    /**
-     * Analyse le code source du projet à la recherche de vulnérabilités A02.
-     *
-     * @return Finding[]
-     */
     public function analyze(Scan $scan, string $projectPath): array
     {
         $findings = [];
@@ -144,8 +130,6 @@ class A02Analyzer
 
         return $finding;
     }
-
-    /** Parcourt récursivement le répertoire et cède les fichiers analysables. */
     private function collectFiles(string $dir): \Generator
     {
         if (!is_dir($dir)) {
@@ -183,8 +167,6 @@ class A02Analyzer
             yield $path;
         }
     }
-
-    /** Résout l'extension logique d'un fichier (.env* → 'env'). */
     private function resolveExtension(string $filePath): string
     {
         if (str_starts_with(basename($filePath), '.env')) {
@@ -193,7 +175,6 @@ class A02Analyzer
 
         return strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
     }
-
     private function relativePath(string $base, string $absolute): string
     {
         return ltrim(substr($absolute, strlen(rtrim($base, '/\\'))), '/\\');
