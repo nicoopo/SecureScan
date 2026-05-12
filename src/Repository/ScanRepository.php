@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Scan;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @extends ServiceEntityRepository<Scan>
@@ -15,29 +16,8 @@ class ScanRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Scan::class);
     }
-
-    //    /**
-    //     * @return Scan[] Returns an array of Scan objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('s')
-    //            ->andWhere('s.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('s.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?Scan
-    //    {
-    //        return $this->createQueryBuilder('s')
-    //            ->andWhere('s.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    public function findByUser(\Symfony\Component\Security\Core\User\UserInterface $user): array
+    {
+        return $this->findBy(['user' => $user]);
+    }
 }

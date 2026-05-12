@@ -62,6 +62,10 @@ class Scan
     #[ORM\OneToOne(mappedBy: 'scan', targetEntity: ScanReport::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private ?ScanReport $report = null;
 
+    #[ORM\ManyToOne(inversedBy: 'scans')]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?User $user = null;
+
     public function __construct()
     {
         $this->findings  = new ArrayCollection();
