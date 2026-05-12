@@ -1,0 +1,36 @@
+<header class="w-full border-b bg-background">
+    <div class="flex h-14 items-center md:gap-15 px-4">
+        <a href="{{ path('app_dashboard') }}" class="flex items-center gap-2 font-semibold me-10">
+            <img src="{{ asset('images/logoipsum-374.svg') }}" alt="logo" class="h-5 w-5" />
+            <span>SecureScan</span>
+        </a>
+        <nav class="hidden md:block">
+            <ul class="flex gap-6">
+                <li>
+                    <a href="{{ path('app_dashboard') }}" class="text-sm font-medium opacity-80 transition-all duration-300 hover:opacity-100 hover:text-red-600">Home</a>
+                </li>
+                <li>
+                    <a href="{{ path('app_scan_new') }}" class="text-sm font-medium opacity-80 transition-all duration-300 hover:opacity-100 hover:text-red-600">Nouveau scan</a>
+                </li>
+                <li>
+                    <a href="{{ path('app_scan_list') }}" class="text-sm font-medium opacity-80 transition-all duration-300 hover:opacity-100 hover:text-red-600">Mes scans</a>
+                </li>
+            </ul>
+        </nav>
+        <div class="ml-auto flex items-center gap-2">
+            {% if app.user %}
+                <span class="text-sm text-gray-600">{{ app.user.email }}</span>
+                <a href="{{ path('app_logout') }}">
+                    <button class="border border-gray-300 bg-white hover:bg-gray-50 text-gray-900 px-4 py-2 rounded-lg text-sm font-medium">Déconnexion</button>
+                </a>
+            {% else %}
+                <a href="{{ path('app_login') }}">
+                    <button class="border border-gray-300 bg-white hover:bg-gray-50 text-gray-900 px-4 py-2 rounded-lg text-sm font-medium">Login</button>
+                </a>
+                <a href="{{ path('app_register') }}">
+                    <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Register</button>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</header>

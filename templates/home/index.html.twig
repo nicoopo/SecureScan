@@ -1,6 +1,6 @@
-{% extends 'base.html.twig' %}
+{% extends 'layouts/layout.html.twig' %}
 {% block title %}Accueil{% endblock %}
-{% block body %}
+{% block content %}
     <h1>Bienvenue sur SecureScan</h1>
     {% if app.user %}
         <p>Bonjour {{ app.user.fullName }} !</p>
