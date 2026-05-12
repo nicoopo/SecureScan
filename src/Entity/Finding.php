@@ -198,8 +198,8 @@ class Finding
         }
         return $this;
     }
-    public function __toString(): string
+public function __toString(): string
 {
-    return $this->name;
+    return $this->title;
 }
 }

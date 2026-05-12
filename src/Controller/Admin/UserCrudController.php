@@ -5,25 +5,27 @@ namespace App\Controller\Admin;
 use App\Entity\User;
 
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
-use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\EmailField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 
-use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
-use EasyCorp\Bundle\EasyAdminBundle\Config\KeyValueStore;
 use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 
-use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\Form\FormEvents;
+use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
+
+use EasyCorp\Bundle\EasyAdminBundle\Config\KeyValueStore;
+
+use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\EmailField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
+
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvents;
 
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
@@ -39,6 +41,23 @@ class UserCrudController extends AbstractCrudController
         return User::class;
     }
 
+    public function configureCrud(Crud $crud): Crud
+    {
+        return $crud
+            ->setEntityLabelInSingular('Utilisateur')
+            ->setEntityLabelInPlural('Utilisateurs')
+
+            ->setDefaultSort([
+                'id' => 'DESC',
+            ])
+
+            ->setSearchFields([
+                'email',
+                'fullName',
+                'gitUsername',
+            ]);
+    }
+
     public function configureFields(string $pageName): iterable
     {
         return [
@@ -46,38 +65,48 @@ class UserCrudController extends AbstractCrudController
             IdField::new('id')
                 ->hideOnForm(),
 
-            EmailField::new('email'),
+            EmailField::new('email')
+                ->setLabel('Email'),
 
-            TextField::new('fullName'),
+            TextField::new('fullName')
+                ->setLabel('Nom complet'),
 
             ChoiceField::new('roles')
-                   ->setChoices([
+                ->setLabel('Rôles')
+                ->setChoices([
                     'Admin' => 'ROLE_ADMIN',
-                    'User' => 'ROLE_USER',
-                 ])
-                  ->allowMultipleChoices(),
+                    'User'  => 'ROLE_USER',
+                ])
+                ->allowMultipleChoices()
+                ->renderExpanded(),
 
-            TextField::new('gitUsername'),
+            TextField::new('gitUsername')
+                ->setLabel('Git Username'),
 
-            BooleanField::new('isVerified'),
+            BooleanField::new('isVerified')
+                ->setLabel('Compte vérifié'),
 
             DateTimeField::new('createdAt')
+                ->setLabel('Créé le')
                 ->hideOnForm(),
 
             DateTimeField::new('updatedAt')
+                ->setLabel('Mis à jour le')
                 ->hideOnForm(),
 
             TextField::new('plainPassword')
+                ->setLabel('Mot de passe')
                 ->setFormType(RepeatedType::class)
                 ->setFormTypeOptions([
+
                     'type' => PasswordType::class,
 
                     'first_options' => [
-                        'label' => 'Password',
+                        'label' => 'Mot de passe',
                     ],
 
                     'second_options' => [
-                        'label' => 'Confirm Password',
+                        'label' => 'Confirmation du mot de passe',
                     ],
 
                     'mapped' => false,
