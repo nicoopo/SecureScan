@@ -1,9 +1,13 @@
-{% extends 'layouts/layouts/layout.html.twig' %}
-
-{% block content %}
-<div class="flex w-full items-center justify-center p-6 md:p-10">
-    <div class="w-full max-w-sm">
-        {% include 'components/auth/login_form.html.twig' %}
-    </div>
-</div>
+{% extends 'layouts/authLayout.html.twig' %}
+{% block title %}Log in!{% endblock %}
+{% block auth_content %}
+{% if error %}
+  <div class="alert alert-danger mb-4">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+{% endif %}
+{% if app.user %}
+  <div class="mb-3 alert alert-info">
+    You are logged in as {{ app.user.userIdentifier }}, <a href="{{ logout_path() }}">Logout</a>
+  </div>
+{% endif %}
+{% include 'components/auth/login_form.html.twig' %}
 {% endblock %}

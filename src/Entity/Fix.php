@@ -125,4 +125,12 @@ class Fix
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
     public function getDecidedAt(): ?\DateTimeImmutable { return $this->decidedAt; }
+ public function __toString(): string
+{
+    return sprintf(
+        '%s - %s',
+        $this->type,
+        $this->status
+    );
+}
 }

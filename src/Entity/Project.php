@@ -129,4 +129,8 @@ class Project
     {
         return $this->scans->first() ?: null;
     }
+    public function __toString(): string
+{
+    return $this->name ?? 'Projet';
+}
 }

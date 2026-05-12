@@ -12,5 +12,9 @@
         {% block content %}{% endblock %}
     </main>
     {% include 'layouts/footer.html.twig' %}
+
+    {% block javascripts %}
+        {% block importmap %}{{ importmap('app') }}{% endblock %}
+    {% endblock %}
 </body>
 </html>
