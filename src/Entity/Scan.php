@@ -62,6 +62,10 @@ class Scan
     #[ORM\OneToOne(mappedBy: 'scan', targetEntity: ScanReport::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private ?ScanReport $report = null;
 
+    #[ORM\ManyToOne(inversedBy: 'scans')]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?User $user = null;
+
     public function __construct()
     {
         $this->findings  = new ArrayCollection();
@@ -187,4 +191,7 @@ class Scan
     public function isDone(): bool    { return $this->status === self::STATUS_DONE; }
     public function isPending(): bool { return $this->status === self::STATUS_PENDING; }
     public function isFailed(): bool  { return $this->status === self::STATUS_FAILED; }
+
+    public function getUser(): ?User { return $this->user; }
+    public function setUser(?User $user): static { $this->user = $user; return $this; }
 }

@@ -1,0 +1,68 @@
+{% extends 'layouts/layout.html.twig' %}
+
+{% block title %}Mes Rapports{% endblock %}
+
+{% block content %}
+    <div class="w-full max-w-5xl mx-auto px-4 py-10">
+
+        <div class="flex items-center justify-between mb-8">
+            <h1 class="text-2xl font-semibold text-gray-900">Mes scans</h1>
+            <a href="{{ path('app_scan_new') }}"
+               class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                Nouveau scan
+            </a>
+        </div>
+
+        {% if scans is empty %}
+            <div class="bg-white border border-gray-200 rounded-xl p-12 text-center">
+                <p class="text-gray-500 text-sm">Aucun scan effectué pour le moment.</p>
+                <a href="{{ path('app_scan_new') }}"
+                   class="inline-block mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    Lancer mon premier scan
+                </a>
+            </div>
+        {% else %}
+            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="text-left px-6 py-3 text-gray-500 font-medium">#</th>
+                        <th class="text-left px-6 py-3 text-gray-500 font-medium">Repository</th>
+                        <th class="text-left px-6 py-3 text-gray-500 font-medium">Date</th>
+                        <th class="text-left px-6 py-3 text-gray-500 font-medium">Score</th>
+                        <th class="text-left px-6 py-3 text-gray-500 font-medium">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                    {% for scan in scans %}
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 text-gray-400">{{ scan.id }}</td>
+                            <td class="px-6 py-4 text-gray-900 font-medium">{{ scan.project.repositoryUrl }}</td>
+                            <td class="px-6 py-4 text-gray-500">{{ scan.startedAt|date('d/m/Y H:i') }}</td>
+                            <td class="px-6 py-4">
+                                {% set score = scan.score ?? 0 %}
+                                <span class="px-2 py-1 rounded-md text-xs font-medium
+                                {% if score >= 80 %}bg-green-100 text-green-800
+                                {% elseif score >= 50 %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ score }}/100
+                            </span>
+                            </td>
+                            <td class="px-6 py-4 flex items-center gap-2">
+                                <a href="{{ path('report_show', {id: scan.id}) }}"
+                                   class="border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
+                                    Voir
+                                </a>
+                                <a href="{{ path('report_pdf', {id: scan.id}) }}"
+                                   class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
+                                    PDF
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
