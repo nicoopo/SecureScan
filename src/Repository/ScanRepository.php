@@ -16,8 +16,15 @@ class ScanRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Scan::class);
     }
-    public function findByUser(\Symfony\Component\Security\Core\User\UserInterface $user): array
+    public function findByUser(UserInterface $user): array
     {
-        return $this->findBy(['user' => $user]);
+        return $this->createQueryBuilder('s')
+            ->distinct()
+            ->join('s.project', 'p')
+            ->where('p.owner = :user')
+            ->setParameter('user', $user)
+            ->orderBy('s.startedAt', 'DESC')
+            ->getQuery()
+            ->getResult();
     }
 }
