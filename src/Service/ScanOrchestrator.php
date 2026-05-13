@@ -10,6 +10,7 @@ use App\Service\Analyzer\A04Analyzer;
 use App\Service\Analyzer\A05Analyzer;
 use App\Service\Analyzer\A07Analyzer;
 use App\Service\Analyzer\A06Analyzer;
+use App\Service\Analyzer\A010Analyzer;
 use App\Service\ProjectCloner;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -22,9 +23,10 @@ class ScanOrchestrator
         private readonly A03Analyzer $a03Analyzer,
         private readonly A04Analyzer $a04Analyzer,
         private readonly A05Analyzer $a05Analyzer,
-        private readonly A07Analyzer $a07Analyzer,
-        private readonly ProjectCloner $cloner,
         private readonly A06Analyzer $a06Analyzer,
+        private readonly A07Analyzer $a07Analyzer,
+        private readonly A010Analyzer  $a010Analyzer,
+        private readonly ProjectCloner $cloner,
         private readonly EntityManagerInterface $em,
         private readonly LoggerInterface        $logger,
     ) {}
@@ -61,8 +63,9 @@ class ScanOrchestrator
                 ...$this->a03Analyzer->analyze($scan, $projectPath),
                 ...$this->a04Analyzer->analyze($scan, $projectPath),
                 ...$this->a05Analyzer->analyze($scan, $projectPath),
-                ...$this->a07Analyzer->analyze($scan, $projectPath),
                 ...$this->a06Analyzer->analyze($scan, $projectPath),
+                ...$this->a07Analyzer->analyze($scan, $projectPath),
+                ...$this->a010Analyzer->analyze($scan, $projectPath),
             ];
 
             foreach ($findings as $finding) {
