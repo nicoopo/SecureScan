@@ -79,7 +79,7 @@ class A06Analyzer
         [
             'id' => 'a06.admin.missing_role_check',
 
-            'regex' => '/admin/i',
+            'regex' => '/[\'"]\/admin|route.*admin|path.*admin/i',
 
             'title' => 'Zone admin potentiellement non protégée',
 
