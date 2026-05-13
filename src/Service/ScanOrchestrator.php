@@ -5,8 +5,10 @@ namespace App\Service;
 use App\Entity\Scan;
 use App\Service\Analyzer\A01Analyzer;
 use App\Service\Analyzer\A02Analyzer;
+use App\Service\Analyzer\A03Analyzer;
 use App\Service\Analyzer\A04Analyzer;
 use App\Service\Analyzer\A05Analyzer;
+use App\Service\Analyzer\A07Analyzer;
 use App\Service\ProjectCloner;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -16,8 +18,10 @@ class ScanOrchestrator
     public function __construct(
         private readonly A01Analyzer $a01Analyzer,
         private readonly A02Analyzer $a02Analyzer,
-        private  readonly A04Analyzer $a04Analyzer,
-        private  readonly A05Analyzer $a05Analyzer,
+        private readonly A03Analyzer $a03Analyzer,
+        private readonly A04Analyzer $a04Analyzer,
+        private readonly A05Analyzer $a05Analyzer,
+        private readonly A07Analyzer $a07Analyzer,
         private readonly ProjectCloner $cloner,
         private readonly EntityManagerInterface $em,
         private readonly LoggerInterface        $logger,
@@ -52,8 +56,10 @@ class ScanOrchestrator
             $findings = [
                 ...$this->a01Analyzer->analyze($scan, $projectPath),
                 ...$this->a02Analyzer->analyze($scan, $projectPath),
+                ...$this->a03Analyzer->analyze($scan, $projectPath),
                 ...$this->a04Analyzer->analyze($scan, $projectPath),
                 ...$this->a05Analyzer->analyze($scan, $projectPath),
+                ...$this->a07Analyzer->analyze($scan, $projectPath),
             ];
 
             foreach ($findings as $finding) {
