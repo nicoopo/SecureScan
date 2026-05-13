@@ -12,6 +12,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final class ReportController extends AbstractController
 {
@@ -23,7 +24,7 @@ final class ReportController extends AbstractController
     #[Route('/report', name: 'report_index')]
     public function index(ScanRepository $scanRepository): Response
     {
-        $scans = $scanRepository->findBy(['user' => $this->getUser()]);
+        $scans = $scanRepository->findByUser($this->getUser());
 
         return $this->render('report/index.html.twig', [
             'scans' => $scans,
@@ -33,7 +34,7 @@ final class ReportController extends AbstractController
     #[Route('/report/{id}', name: 'report_show')]
     public function show(Scan $scan, Request $request): Response
     {
-        if ($scan->getUser() !== $this->getUser()) {
+        if ($scan->getProject()->getOwner() !== $this->getUser()) {
             throw $this->createAccessDeniedException();
         }
 
@@ -54,7 +55,7 @@ final class ReportController extends AbstractController
     #[Route('/report/{id}/pdf', name: 'report_pdf')]
     public function pdf(Scan $scan): Response
     {
-        if ($scan->getUser() !== $this->getUser()) {
+        if ($scan->getProject()->getOwner() !== $this->getUser()) {
             throw $this->createAccessDeniedException();
         }
 
@@ -70,7 +71,7 @@ final class ReportController extends AbstractController
     #[Route('/report/{id}/html', name: 'report_html')]
     public function html(Scan $scan): Response
     {
-        if ($scan->getUser() !== $this->getUser()) {
+        if ($scan->getProject()->getOwner() !== $this->getUser()) {
             throw $this->createAccessDeniedException();
         }
 
@@ -80,9 +81,8 @@ final class ReportController extends AbstractController
             return ($order[$a->getSeverity()] ?? 99) <=> ($order[$b->getSeverity()] ?? 99);
         });
 
-
         return $this->render('report/export.html.twig', [
-            'scan' => $scan,
+            'scan'     => $scan,
             'findings' => $findings,
         ]);
     }
@@ -99,7 +99,7 @@ final class ReportController extends AbstractController
     #[Route('/report/{id}/share', name: 'report_share', methods: ['POST'])]
     public function generateShareLink(Scan $scan, EntityManagerInterface $em): JsonResponse
     {
-        if ($scan->getUser() !== $this->getUser()) {
+        if ($scan->getProject()->getOwner() !== $this->getUser()) {
             throw $this->createAccessDeniedException();
         }
 
