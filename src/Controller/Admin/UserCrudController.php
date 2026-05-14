@@ -14,6 +14,9 @@ use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
 
 use EasyCorp\Bundle\EasyAdminBundle\Config\KeyValueStore;
 
+use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
+
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
@@ -35,6 +38,14 @@ class UserCrudController extends AbstractCrudController
         private UserPasswordHasherInterface $userPasswordHasher
     ) {
     }
+
+    public function configureActions(Actions $actions): Actions
+{
+    return $actions
+        ->add(Crud::PAGE_EDIT, Action::INDEX)
+        ->add(Crud::PAGE_INDEX, Action::DETAIL)
+        ->add(Crud::PAGE_EDIT, Action::DETAIL);
+}
 
     public static function getEntityFqcn(): string
     {
