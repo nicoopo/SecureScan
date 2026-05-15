@@ -7,13 +7,6 @@ use App\Entity\Scan;
 
 /**
  * Analyseur OWASP A06 - Insecure Design.
- *
- * Détecte :
- * - uploads non sécurisés,
- * - absence de validation,
- * - routes sensibles sans sécurité,
- * - accès admin sans contrôle,
- * - utilisation directe des paramètres utilisateur.
  */
 class A06Analyzer
 {
@@ -38,7 +31,8 @@ class A06Analyzer
 
             'title' => 'Upload de fichier potentiellement non sécurisé',
 
-            'description' => 'Un upload de fichier a été détecté sans validation explicite du type MIME, de la taille ou de l’extension.',
+            'description' =>
+                'Un upload de fichier a été détecté sans validation explicite du type MIME, de la taille ou de l’extension.',
 
             'severity' => Finding::SEVERITY_HIGH,
 
@@ -53,14 +47,15 @@ class A06Analyzer
 
             'title' => 'Utilisation directe d’un paramètre utilisateur',
 
-            'description' => 'Une donnée utilisateur provenant de la requête HTTP est utilisée directement sans validation explicite.',
+            'description' =>
+                'Une donnée utilisateur provenant de la requête HTTP est utilisée directement sans validation explicite.',
 
             'severity' => Finding::SEVERITY_MEDIUM,
 
             'extensions' => ['php'],
         ],
 
-        // Route sans sécurité
+        // Route Symfony
         [
             'id' => 'a06.route.missing_security',
 
@@ -68,26 +63,28 @@ class A06Analyzer
 
             'title' => 'Route potentiellement sans contrôle d’accès',
 
-            'description' => 'Une route Symfony a été détectée sans vérification explicite de sécurité.',
+            'description' =>
+                'Une route Symfony a été détectée sans vérification explicite de sécurité.',
 
             'severity' => Finding::SEVERITY_MEDIUM,
 
             'extensions' => ['php'],
         ],
 
-        // Zone admin exposée
+        // Route admin potentiellement exposée
         [
             'id' => 'a06.admin.missing_role_check',
 
-            'regex' => '/[\'"]\/admin|route.*admin|path.*admin/i',
+            'regex' => '/#\[Route\([^\)]*\/admin/i',
 
             'title' => 'Zone admin potentiellement non protégée',
 
-            'description' => 'Une fonctionnalité admin a été détectée sans contrôle explicite de rôle.',
+            'description' =>
+                'Une route admin a été détectée sans protection explicite ROLE_ADMIN.',
 
             'severity' => Finding::SEVERITY_CRITICAL,
 
-            'extensions' => ['php', 'twig', 'yaml'],
+            'extensions' => ['php'],
         ],
 
         // Formulaire sans validation
@@ -98,7 +95,8 @@ class A06Analyzer
 
             'title' => 'Formulaire potentiellement sans validation',
 
-            'description' => 'Un formulaire Symfony est utilisé sans validation explicite détectée.',
+            'description' =>
+                'Un formulaire Symfony est utilisé sans validation explicite détectée.',
 
             'severity' => Finding::SEVERITY_LOW,
 
@@ -113,7 +111,8 @@ class A06Analyzer
 
             'title' => 'Mécanisme de sécurité désactivé',
 
-            'description' => 'Une configuration désactive potentiellement une protection de sécurité importante.',
+            'description' =>
+                'Une configuration désactive potentiellement une protection de sécurité importante.',
 
             'severity' => Finding::SEVERITY_HIGH,
 
@@ -126,8 +125,11 @@ class A06Analyzer
      *
      * @return Finding[]
      */
-    public function analyze(Scan $scan, string $projectPath): array
-    {
+    public function analyze(
+        Scan $scan,
+        string $projectPath
+    ): array {
+
         $findings = [];
 
         foreach ($this->collectFiles($projectPath) as $filePath) {
@@ -152,29 +154,49 @@ class A06Analyzer
 
             foreach (self::PATTERNS as $pattern) {
 
-                if (!in_array(
-                    $extension,
-                    $pattern['extensions'],
-                    true
-                )) {
+                // Vérifie l’extension
+                if (
+                    !in_array(
+                        $extension,
+                        $pattern['extensions'],
+                        true
+                    )
+                ) {
                     continue;
                 }
 
                 foreach ($lines as $index => $lineContent) {
 
-                    if (preg_match(
-                        $pattern['regex'],
-                        $lineContent
-                    )) {
-
-                        $findings[] = $this->buildFinding(
-                            $scan,
-                            $pattern,
-                            $relativePath,
-                            $index + 1,
-                            trim($lineContent)
-                        );
+                    // Vérifie la regex
+                    if (
+                        !preg_match(
+                            $pattern['regex'],
+                            $lineContent
+                        )
+                    ) {
+                        continue;
                     }
+
+                    // Cas spécial : route admin protégée
+                    if (
+                        $pattern['id']
+                        === 'a06.admin.missing_role_check'
+                        && $this->isProtectedAdminRoute(
+                            $projectPath,
+                            $lines,
+                            $index
+                        )
+                    ) {
+                        continue;
+                    }
+
+                    $findings[] = $this->buildFinding(
+                        $scan,
+                        $pattern,
+                        $relativePath,
+                        $index + 1,
+                        trim($lineContent)
+                    );
                 }
             }
         }
@@ -182,6 +204,66 @@ class A06Analyzer
         return $findings;
     }
 
+    /**
+     * Vérifie si une route admin est protégée.
+     */
+    private function isProtectedAdminRoute(
+        string $projectPath,
+        array $lines,
+        int $index
+    ): bool {
+
+        // Contexte autour de la route
+        $context = implode(
+            "\n",
+            array_slice(
+                $lines,
+                max(0, $index - 5),
+                10
+            )
+        );
+
+        // Protection dans le controller
+        if (
+            str_contains($context, 'ROLE_ADMIN')
+            || str_contains($context, 'IsGranted')
+            || str_contains($context, 'denyAccessUnlessGranted')
+        ) {
+            return true;
+        }
+
+        // Vérifie security.yaml
+        $securityFile =
+            $projectPath
+            . '/config/packages/security.yaml';
+
+        if (file_exists($securityFile)) {
+
+            $securityContent = file_get_contents(
+                $securityFile
+            );
+
+            if (
+                $securityContent !== false
+                && str_contains(
+                    $securityContent,
+                    'path: ^/admin'
+                )
+                && str_contains(
+                    $securityContent,
+                    'ROLE_ADMIN'
+                )
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Construit un Finding.
+     */
     private function buildFinding(
         Scan $scan,
         array $pattern,
@@ -208,10 +290,12 @@ class A06Analyzer
     }
 
     /**
-     * Parcourt récursivement les fichiers du projet.
+     * Parcourt récursivement les fichiers.
      */
-    private function collectFiles(string $dir): \Generator
-    {
+    private function collectFiles(
+        string $dir
+    ): \Generator {
+
         if (!is_dir($dir)) {
             return;
         }
@@ -232,20 +316,31 @@ class A06Analyzer
                 continue;
             }
 
-            if (!in_array(
-                strtolower($file->getExtension()),
-                self::EXTENSIONS,
-                true
-            )) {
+            if (
+                !in_array(
+                    strtolower($file->getExtension()),
+                    self::EXTENSIONS,
+                    true
+                )
+            ) {
                 continue;
             }
 
             $path = $file->getPathname();
 
             if (
-                str_contains($path, DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR)
-                || str_contains($path, DIRECTORY_SEPARATOR . 'node_modules' . DIRECTORY_SEPARATOR)
-                || str_contains($path, DIRECTORY_SEPARATOR . '.git' . DIRECTORY_SEPARATOR)
+                str_contains(
+                    $path,
+                    DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR
+                )
+                || str_contains(
+                    $path,
+                    DIRECTORY_SEPARATOR . 'node_modules' . DIRECTORY_SEPARATOR
+                )
+                || str_contains(
+                    $path,
+                    DIRECTORY_SEPARATOR . '.git' . DIRECTORY_SEPARATOR
+                )
             ) {
                 continue;
             }
@@ -254,13 +349,19 @@ class A06Analyzer
         }
     }
 
+    /**
+     * Transforme un chemin absolu en chemin relatif.
+     */
     private function relativePath(
         string $base,
         string $absolute
     ): string {
 
         return ltrim(
-            substr($absolute, strlen(rtrim($base, '/\\'))),
+            substr(
+                $absolute,
+                strlen(rtrim($base, '/\\'))
+            ),
             '/\\'
         );
     }
