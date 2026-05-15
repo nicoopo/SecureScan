@@ -56,8 +56,8 @@ class ScanReport
     public function setSummary(?array $data): static { $this->summary = $data; return $this; }
 
     public function getGeneratedAt(): \DateTimeImmutable { return $this->generatedAt; }
-    public function __toString(): string
+   public function __toString(): string
 {
-    return $this->name;
+    return 'Report #' . $this->id;
 }
 }

@@ -40,8 +40,9 @@ security:
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/register, roles: PUBLIC_ACCESS }
         - { path: ^/forgot-password, roles: PUBLIC_ACCESS }
+        - { path: ^/admin, roles: ROLE_ADMIN }
         - { path: ^/, roles: ROLE_USER }
-        - { path: ^/, roles: ROLE_ADMIN }
+        
 
     # Voter pour s'assurer qu'un user ne voit que ses projets
     # (à activer quand tu crées le ProjectVoter)
