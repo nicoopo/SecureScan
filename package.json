@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "build-css": "tailwindcss -i ./assets/styles/app.css -o ./assets/app.css --watch",
+    "build-css": "tailwindcss -i assets/styles/app.css -o ./assets/app.css --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

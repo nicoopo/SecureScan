@@ -21,6 +21,10 @@
                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                     Télécharger PDF
                 </a>
+                <a href="{{ path('report_html', {id: scan.id}) }}"
+                   class="border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Exporter HTML
+                </a>
             </div>
         </div>
 
@@ -61,21 +65,15 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <div class="bg-white border border-gray-200 rounded-xl p-5">
                 <h2 class="text-sm font-semibold text-gray-900 mb-4">Répartition par sévérité</h2>
-                <div class="flex flex-wrap gap-3 mb-3 text-xs text-gray-500">
-                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block"></span>Critique</span>
-                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-orange-400 inline-block"></span>Haute</span>
-                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block"></span>Moyenne</span>
-                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-green-500 inline-block"></span>Basse</span>
-                </div>
                 <div style="height: 200px">
-                    {{ render_chart(chartSeverity) }}
+                    {{ render_chart(chartSeverity, {'aria-label': 'Sévérité', 'legend': false}) }}
                 </div>
             </div>
 
             <div class="bg-white border border-gray-200 rounded-xl p-5">
                 <h2 class="text-sm font-semibold text-gray-900 mb-4">Distribution OWASP Top 10</h2>
                 <div style="height: 260px">
-                    {{ render_chart(chartOwasp) }}
+                    {{ render_chart(chartOwasp, {'aria-label': 'OWASP', 'legend': false}) }}
                 </div>
             </div>
         </div>
@@ -83,28 +81,36 @@
         {# Table des findings #}
         <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                <h2 class="text-sm font-semibold text-gray-900">Findings détectés</h2>
+                <h2 class="text-sm font-semibold text-gray-900">
+                    Findings détectés
+                    <span id="findingCount"
+                          class="ml-2 text-xs font-normal text-gray-400">
+                        {{ scan.findings|length }} / {{ scan.findings|length }}
+                    </span>
+                </h2>
                 <div class="flex gap-2">
                     <select id="filterSev" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 text-gray-700">
                         <option value="">Toutes sévérités</option>
-                        <option value="critical">Critique</option>
-                        <option value="high">Haute</option>
-                        <option value="medium">Moyenne</option>
-                        <option value="low">Basse</option>
+                        <option value="critical" {{ filters.severity == 'critical' ? 'selected' }}>Critique</option>
+                        <option value="high"     {{ filters.severity == 'high'     ? 'selected' }}>Haute</option>
+                        <option value="medium"   {{ filters.severity == 'medium'   ? 'selected' }}>Moyenne</option>
+                        <option value="low"      {{ filters.severity == 'low'      ? 'selected' }}>Basse</option>
                     </select>
+
                     <select id="filterOwasp" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 text-gray-700">
                         <option value="">Toutes catégories</option>
                         {% for code, label in constant('App\\Entity\\Finding::OWASP_LABELS') %}
-                            <option value="{{ code }}">{{ code }} — {{ label }}</option>
+                            <option value="{{ code }}" {{ filters.owasp == code ? 'selected' }}>{{ code }} — {{ label }}</option>
                         {% endfor %}
                     </select>
+
                     <select id="filterTool" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 text-gray-700">
                         <option value="">Tous les outils</option>
-                        <option value="semgrep">Semgrep</option>
-                        <option value="npm_audit">npm audit</option>
-                        <option value="trufflehog">TruffleHog</option>
-                        <option value="eslint">ESLint</option>
-                        <option value="phpstan">PHPStan</option>
+                        <option value="semgrep"    {{ filters.tool == 'semgrep'    ? 'selected' }}>Semgrep</option>
+                        <option value="npm_audit"  {{ filters.tool == 'npm_audit'  ? 'selected' }}>npm audit</option>
+                        <option value="trufflehog" {{ filters.tool == 'trufflehog' ? 'selected' }}>TruffleHog</option>
+                        <option value="eslint"     {{ filters.tool == 'eslint'     ? 'selected' }}>ESLint</option>
+                        <option value="phpstan"    {{ filters.tool == 'phpstan'    ? 'selected' }}>PHPStan</option>
                     </select>
                 </div>
             </div>
@@ -163,19 +169,43 @@
 {% block javascripts %}
     {{ parent() }}
     <script>
-        ['filterSev', 'filterOwasp', 'filterTool'].forEach(id => {
-            document.getElementById(id).addEventListener('change', () => {
-                const sev   = document.getElementById('filterSev').value;
-                const owasp = document.getElementById('filterOwasp').value;
-                const tool  = document.getElementById('filterTool').value;
-                document.querySelectorAll('.finding-row').forEach(row => {
-                    const show =
-                        (!sev   || row.dataset.severity === sev)  &&
-                        (!owasp || row.dataset.owasp    === owasp) &&
-                        (!tool  || row.dataset.tool     === tool);
-                    row.style.display = show ? '' : 'none';
-                });
+        const urlParams = new URLSearchParams(window.location.search);
+
+        function applyFilters() {
+            const sev   = document.getElementById('filterSev').value;
+            const owasp = document.getElementById('filterOwasp').value;
+            const tool  = document.getElementById('filterTool').value;
+
+            let visible = 0;
+            document.querySelectorAll('.finding-row').forEach(row => {
+                const show =
+                    (!sev   || row.dataset.severity === sev)  &&
+                    (!owasp || row.dataset.owasp    === owasp) &&
+                    (!tool  || row.dataset.tool     === tool);
+                row.style.display = show ? '' : 'none';
+                if (show) visible++;
             });
+
+            // Met à jour le badge de count
+            document.getElementById('findingCount').textContent =
+                visible + ' / ' + document.querySelectorAll('.finding-row').length;
+
+            // Persiste dans l'URL sans rechargement
+            const params = new URLSearchParams();
+            if (sev)   params.set('severity', sev);
+            if (owasp) params.set('owasp', owasp);
+            if (tool)  params.set('tool', tool);
+            const newUrl = params.toString()
+                ? window.location.pathname + '?' + params.toString()
+                : window.location.pathname;
+            history.replaceState(null, '', newUrl);
+        }
+
+        ['filterSev', 'filterOwasp', 'filterTool'].forEach(id => {
+            document.getElementById(id).addEventListener('change', applyFilters);
         });
+
+        // Applique au chargement si des params sont dans l'URL
+        applyFilters();
     </script>
 {% endblock %}
