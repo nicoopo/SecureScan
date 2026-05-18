@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 *, ::before, ::after {
   --tw-border-spacing-x: 0;
   --tw-border-spacing-y: 0;
@@ -828,9 +830,6 @@ video {
   transition-duration: 300ms;
 }
 
-body {
-  background-color: skyblue;
-}
 
 .hover\:underline:hover {
   text-decoration-line: underline;

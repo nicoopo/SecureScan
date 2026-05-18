@@ -3,19 +3,10 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Scan;
-use App\Service\ScanService;
-
-use Doctrine\ORM\EntityManagerInterface;
-
-use Symfony\Component\HttpFoundation\RedirectResponse;
-
-use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
-
-use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 
@@ -23,7 +14,6 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 
@@ -32,6 +22,14 @@ class ScanCrudController extends AbstractCrudController
     public static function getEntityFqcn(): string
     {
         return Scan::class;
+    }
+
+    public function configureActions(Actions $actions): Actions
+    {
+        return $actions
+            ->add(Crud::PAGE_EDIT, Action::INDEX)
+            ->add(Crud::PAGE_INDEX, Action::DETAIL)
+            ->add(Crud::PAGE_EDIT, Action::DETAIL);
     }
 
     public function configureCrud(Crud $crud): Crud
@@ -50,16 +48,6 @@ class ScanCrudController extends AbstractCrudController
                 'fixBranch',
                 'project.name',
             ]);
-    }
-
-    public function configureActions(Actions $actions): Actions
-    {
-        $runScan = Action::new('runScan', 'Lancer Scan')
-            ->linkToCrudAction('runScan');
-
-        return $actions
-            ->add(Crud::PAGE_INDEX, $runScan)
-            ->add(Crud::PAGE_DETAIL, $runScan);
     }
 
     public function configureFields(string $pageName): iterable
@@ -104,7 +92,6 @@ class ScanCrudController extends AbstractCrudController
                 ->setLabel('Fin du scan')
                 ->hideOnForm(),
 
-          
             TextField::new('fixBranch')
                 ->setLabel('Branche Git')
                 ->hideOnIndex(),
@@ -117,44 +104,5 @@ class ScanCrudController extends AbstractCrudController
                 ->setLabel('Rapport')
                 ->hideOnIndex(),
         ];
-    }
-
-    #[AdminRoute(path: '/scan/{entityId}/run', name: 'admin_scan_run')]
-    public function runScan(
-        AdminContext $context,
-        ScanService $scanService,
-        EntityManagerInterface $em
-    ): RedirectResponse {
-
-        /** @var Scan $scan */
-        $scan = $context->getEntity()->getInstance();
-
-        $project = $scan->getProject();
-
-        if (!$project || !$project->getLocalPath()) {
-
-            $this->addFlash(
-                'danger',
-                'Le projet ne possède aucun chemin local.'
-            );
-
-            return $this->redirect(
-                $this->generateUrl('admin')
-            );
-        }
-
-        $scanService->runScan(
-            $scan,
-            $project->getLocalPath()
-        );
-
-        $this->addFlash(
-            'success',
-            'Le scan a été lancé avec succès.'
-        );
-
-        return $this->redirect(
-            $this->generateUrl('admin')
-        );
     }
 }
