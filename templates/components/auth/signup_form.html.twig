@@ -1,14 +1,14 @@
 <form class="flex flex-col gap-6" method="post">
   <div class="flex flex-col items-center gap-1 text-center">
-    <h1 class="text-2xl font-bold">Create your account</h1>
+    <h1 class="text-2xl font-bold">Créer votre compte</h1>
     <p class="text-sm text-balance text-muted-foreground">
-      Fill in the form below to create your account
+        Remplissez le formulaire ci-dessous pour créer votre compte
     </p>
   </div>
   {{ form_errors(registrationForm) }}
   <div class="space-y-4">
     <div>
-      <label for="{{ registrationForm.fullName.vars.id }}" class="block text-sm font-medium mb-2">Full Name</label>
+      <label for="{{ registrationForm.fullName.vars.id }}" class="block text-sm font-medium mb-2">Nom prénom</label>
       {{ form_widget(registrationForm.fullName, {
         attr: { class: 'w-full rounded-md border px-3 py-2 text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-900' }
       }) }}
@@ -20,24 +20,24 @@
         attr: { class: 'w-full rounded-md border px-3 py-2 text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-900' }
       }) }}
       <p class="text-sm text-muted-foreground mt-1">
-        We'll use this to contact you. We will not share your email with anyone else.
+          Nous utiliserons ces informations pour vous contacter. Nous ne partagerons votre adresse e-mail avec personne d'autre.
       </p>
       {{ form_errors(registrationForm.email) }}
     </div>
     <div>
-      <label for="{{ registrationForm.plainPassword.vars.id }}" class="block text-sm font-medium mb-2">Password</label>
+      <label for="{{ registrationForm.plainPassword.vars.id }}" class="block text-sm font-medium mb-2">Mot de passe</label>
       {{ form_widget(registrationForm.plainPassword, {
         attr: { class: 'w-full rounded-md border px-3 py-2 text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-900' }
       }) }}
       <p class="text-sm text-muted-foreground mt-1">
-        Must be at least 8 characters long.
+          Doit comporter au moins 8 caractères.
       </p>
       {{ form_errors(registrationForm.plainPassword) }}
     </div>
     <div>
-      <label for="confirm-password" class="block text-sm font-medium mb-2">Confirm Password</label>
+      <label for="confirm-password" class="block text-sm font-medium mb-2">Confirmez le mot de passe</label>
       <input id="confirm-password" name="confirm_password" type="password" required class="w-full rounded-md border px-3 py-2 text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-900" />
-      <p class="text-sm text-muted-foreground mt-1">Please confirm your password.</p>
+      <p class="text-sm text-muted-foreground mt-1">Merci de confirmez le mot de passe.</p>
     </div>
       <div class="flex items-center space-x-2">
           {{ form_widget(registrationForm.agreeTerms, {
@@ -49,8 +49,8 @@
       </div>
       {{ form_errors(registrationForm.agreeTerms) }}
       <div class="space-y-2">
-          <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Create Account</button>
-          <p class="text-center text-sm text-gray-600">Already have an account? <a href="/login" class="underline underline-offset-4 hover:underline">Sign in</a></p>
+          <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Créer votre compte</button>
+          <p class="text-center text-sm text-gray-600">Déja un compte? <a href="/login" class="underline underline-offset-4 hover:underline">Connexion</a></p>
       </div>
   </div>
   {{ form_rest(registrationForm) }}

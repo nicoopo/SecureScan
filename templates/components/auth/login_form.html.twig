@@ -1,8 +1,8 @@
 <form class="flex flex-col gap-6" method="post">
   <div class="flex flex-col items-center gap-1 text-center">
-    <h1 class="text-2xl font-bold">Welcome back</h1>
+    <h1 class="text-2xl font-bold">Bon retour</h1>
     <p class="text-sm text-balance text-muted-foreground">
-      Enter your email and password to sign in to your account
+        Saisissez votre adresse e-mail et votre mot de passe pour vous connecter à votre compte.
     </p>
   </div>
   <div class="space-y-4">
@@ -12,15 +12,15 @@
     </div>
     <div>
       <div class="flex items-center justify-between">
-        <label for="password" class="block text-sm font-medium mb-2">Password</label>
-        <a href="/forgot-password" class="text-sm text-muted-foreground hover:underline">Forgot your password?</a>
+        <label for="password" class="block text-sm font-medium mb-2">Mot de passe</label>
+        <a href="/forgot-password" class="text-sm text-muted-foreground hover:underline">Mot de passe oublié?</a>
       </div>
       <input id="password" name="_password" type="password" required class="w-full rounded-md border px-3 py-2 text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-900" />
     </div>
     <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}" />
       <div class="space-y-2">
           <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Login</button>
-          <p class="text-center text-sm text-gray-600">Don't have an account? <a href="/register" class="underline underline-offset-4 hover:underline">Sign up</a></p>
+          <p class="text-center text-sm text-gray-600">Pas de compte? <a href="/register" class="underline underline-offset-4 hover:underline">Inscription</a></p>
       </div>
   </div>
 </form>
