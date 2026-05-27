@@ -1,14 +1,15 @@
 {% extends 'layouts/layout.html.twig' %}
 {% block title %}Mes scans{% endblock %}
 {% block content %}
+<div class="max-w-6xl mx-auto px-6 py-8">
 
     <!-- Header -->
     <div class="flex items-center justify-between mb-8">
         <div>
-            <h1 class="text-2xl font-bold text-white tracking-tight">Mes scans</h1>
-            <p class="text-[#8b949e] mt-1 text-sm">Historique de vos analyses de sécurité.</p>
+            <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Mes scans</h1>
+            <p class="text-gray-600 mt-1 text-sm">Historique de vos analyses de sécurité.</p>
         </div>
-        <a href="{{ path('app_scan_new') }}" class="flex items-center gap-2 px-4 py-2.5 bg-acid text-night-950 text-sm font-semibold rounded-lg hover:bg-acid-dim transition-colors shadow-glow">
+        <a href="{{ path('app_scan_new') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors shadow">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
             </svg>
@@ -18,26 +19,26 @@
 
     {% if scans is empty %}
         <!-- Empty state -->
-        <div class="rounded-xl border border-night-600 bg-night-800 p-16 text-center shadow-card">
-            <div class="w-12 h-12 rounded-full bg-night-700 border border-night-600 flex items-center justify-center mx-auto mb-4">
-                <svg class="w-6 h-6 text-[#484f58]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <div class="rounded-xl border bg-white p-16 text-center shadow-card">
+            <div class="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
                 </svg>
             </div>
-            <p class="text-white font-semibold mb-1">Aucun scan pour l'instant</p>
-            <p class="text-[#8b949e] text-sm mb-6">Lancez votre première analyse pour détecter des vulnérabilités.</p>
-            <a href="{{ path('app_scan_new') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-acid/10 border border-acid/30 text-acid text-sm font-semibold rounded-lg hover:bg-acid/20 transition-colors">
+            <p class="text-gray-900 font-semibold mb-1">Aucun scan pour l'instant</p>
+            <p class="text-gray-600 text-sm mb-6">Lancez votre première analyse pour détecter des vulnérabilités.</p>
+            <a href="{{ path('app_scan_new') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
                 Lancer un premier scan →
             </a>
         </div>
 
     {% else %}
         <!-- Table -->
-        <div class="rounded-xl border border-night-600 bg-night-800 shadow-card overflow-hidden">
+        <div class="rounded-xl border bg-white shadow-card overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
-                    <tr class="border-b border-night-700 text-[#8b949e] text-xs font-mono uppercase tracking-widest">
+                    <tr class="border-b border-gray-200 text-gray-600 text-xs uppercase tracking-widest">
                         <th class="px-6 py-3.5 text-left">ID</th>
                         <th class="px-6 py-3.5 text-left">Projet</th>
                         <th class="px-6 py-3.5 text-left">Statut</th>
@@ -47,11 +48,11 @@
                         <th class="px-6 py-3.5 text-right"></th>
                     </tr>
                     </thead>
-                    <tbody class="divide-y divide-night-700">
+                    <tbody class="divide-y divide-gray-100">
                     {% for scan in scans %}
                         <tr class="scan-row transition-colors">
-                            <td class="px-6 py-4 font-mono text-[#8b949e] text-xs">#{{ scan.id }}</td>
-                            <td class="px-6 py-4 font-semibold text-white">{{ scan.project.name }}</td>
+                            <td class="px-6 py-4 font-mono text-gray-600 text-xs">#{{ scan.id }}</td>
+                            <td class="px-6 py-4 font-semibold text-gray-900">{{ scan.project.name }}</td>
                             <td class="px-6 py-4">
                                 {% if scan.status == 'done' or scan.status == 'completed' %}
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium badge-low">
@@ -76,9 +77,9 @@
                             </td>
                             <td class="px-6 py-4 font-mono text-sm">
                                 {% if scan.score is not null %}
-                                    <span class="text-white font-semibold">{{ scan.score }}</span><span class="text-[#484f58">/100</span>
+                                    <span class="text-gray-900 font-semibold">{{ scan.score }}</span><span class="text-gray-500">/100</span>
                                 {% else %}
-                                    <span class="text-[#484f58]">—</span>
+                                    <span class="text-gray-400">—</span>
                                 {% endif %}
                             </td>
                             <td class="px-6 py-4 font-mono font-bold">
@@ -96,10 +97,10 @@
                                     <span class="text-[#484f58]">—</span>
                                 {% endif %}
                             </td>
-                            <td class="px-6 py-4 text-[#8b949e] text-xs font-mono">{{ scan.startedAt|date('d/m/Y H:i') }}</td>
+                            <td class="px-6 py-4 text-gray-500 text-xs font-mono">{{ scan.startedAt|date('d/m/Y H:i') }}</td>
                             <td class="px-6 py-4 text-right">
                                 <a href="{{ path('app_scan_detail', {id: scan.id}) }}"
-                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-night-700 border border-night-600 text-xs text-[#8b949e] hover:text-white hover:border-night-500 transition-colors font-mono">
+                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs font-medium">
                                     Voir →
                                 </a>
                             </td>
@@ -111,4 +112,5 @@
         </div>
     {% endif %}
 
+</div>
 {% endblock %}
