@@ -54,6 +54,31 @@ docker exec -it securescan_app php bin/console asset-map:compile
 
 ---
 
+## 🛠️ Makefile
+
+Un `Makefile` est disponible pour raccourcir les commandes Docker/Symfony du quotidien.
+
+```bash
+# Voir toutes les commandes disponibles
+make help
+
+# Installation complète (build + composer + BDD + migrations + fixtures + assets)
+make install
+
+# Exemples
+make up              # Démarrer les conteneurs
+make down            # Arrêter les conteneurs
+make sh              # Shell dans le conteneur PHP
+make migrate         # Lancer les migrations
+make fixtures        # Charger les fixtures
+make cache-clear     # Vider le cache
+make test            # Lancer les tests PHPUnit
+```
+
+> Les commandes ci-dessous restent valables si tu préfères ne pas utiliser `make`.
+
+---
+
 ## 🐳 Commandes Docker du quotidien
 
 ```bash
