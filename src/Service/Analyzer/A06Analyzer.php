@@ -19,6 +19,9 @@ class A06Analyzer
         'twig',
         'js',
         'ts',
+        'py',
+        'java',
+        'go',
     ];
 
     private const PATTERNS = [
@@ -37,6 +40,54 @@ class A06Analyzer
             'severity' => Finding::SEVERITY_HIGH,
 
             'extensions' => ['php'],
+        ],
+
+        // Upload sans validation — Python (Flask/Django)
+        [
+            'id' => 'a06.upload.unvalidated_file_upload.python',
+
+            'regex' => '/request\.files\[|request\.FILES\[/i',
+
+            'title' => 'Upload de fichier potentiellement non sécurisé',
+
+            'description' =>
+                'Un fichier issu de request.files/request.FILES est utilisé sans validation explicite du type MIME, de la taille ou de l’extension visible dans le contexte immédiat.',
+
+            'severity' => Finding::SEVERITY_HIGH,
+
+            'extensions' => ['py'],
+        ],
+
+        // Upload sans validation — Java (Spring MultipartFile)
+        [
+            'id' => 'a06.upload.unvalidated_file_upload.java',
+
+            'regex' => '/\.transferTo\s*\(/i',
+
+            'title' => 'Upload de fichier potentiellement non sécurisé',
+
+            'description' =>
+                'MultipartFile.transferTo() est appelé sans validation explicite du type MIME, de la taille ou de l’extension visible dans le contexte immédiat.',
+
+            'severity' => Finding::SEVERITY_HIGH,
+
+            'extensions' => ['java'],
+        ],
+
+        // Upload sans validation — Go
+        [
+            'id' => 'a06.upload.unvalidated_file_upload.go',
+
+            'regex' => '/r\.FormFile\s*\(/i',
+
+            'title' => 'Upload de fichier potentiellement non sécurisé',
+
+            'description' =>
+                'r.FormFile() est utilisé sans validation explicite du type MIME, de la taille ou de l’extension visible dans le contexte immédiat.',
+
+            'severity' => Finding::SEVERITY_HIGH,
+
+            'extensions' => ['go'],
         ],
 
         // Paramètre utilisateur utilisé directement

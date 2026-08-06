@@ -15,7 +15,7 @@ class A08Analyzer
     private const TOOL = 'securescan';
 
     /** Extensions de fichiers inspectées */
-    private const EXTENSIONS = ['php', 'js', 'ts'];
+    private const EXTENSIONS = ['php', 'js', 'ts', 'py', 'java', 'rb'];
 
     /**
      * Patterns détectés — chaque entrée décrit une règle statique.
@@ -69,6 +69,30 @@ class A08Analyzer
             'description' => "require/include avec une URL distante permet l'exécution de code externe non maîtrisé. Désactiver allow_url_include dans php.ini et toujours inclure des fichiers locaux vérifiés.",
             'severity'    => Finding::SEVERITY_CRITICAL,
             'extensions'  => ['php'],
+        ],
+        [
+            'id'          => 'a08.integrity.unsafe_deserialize.python',
+            'regex'       => '/pickle\.loads?\s*\(/i',
+            'title'       => 'Désérialisation non sûre (pickle)',
+            'description' => "pickle.loads()/pickle.load() sur des données non fiables permet l'exécution de code arbitraire. Utiliser json pour désérialiser des données externes.",
+            'severity'    => Finding::SEVERITY_CRITICAL,
+            'extensions'  => ['py'],
+        ],
+        [
+            'id'          => 'a08.integrity.unsafe_deserialize.ruby',
+            'regex'       => '/Marshal\.load\s*\(/i',
+            'title'       => 'Désérialisation non sûre (Marshal)',
+            'description' => "Marshal.load() sur des données non fiables permet l'exécution de code arbitraire (RCE). Utiliser JSON pour désérialiser des données externes.",
+            'severity'    => Finding::SEVERITY_CRITICAL,
+            'extensions'  => ['rb'],
+        ],
+        [
+            'id'          => 'a08.integrity.unsafe_deserialize.java',
+            'regex'       => '/new\s+ObjectInputStream\s*\(/i',
+            'title'       => 'Désérialisation non sûre (ObjectInputStream)',
+            'description' => "La désérialisation Java native (ObjectInputStream.readObject()) sur des données non fiables est une source classique de RCE. Utiliser un format de données sûr (JSON) ou valider strictement les classes désérialisables.",
+            'severity'    => Finding::SEVERITY_CRITICAL,
+            'extensions'  => ['java'],
         ],
     ];
 

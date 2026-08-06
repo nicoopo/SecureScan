@@ -9,7 +9,7 @@ class A02Analyzer
 {
     private const TOOL = 'securescan';
 
-    private const EXTENSIONS = ['php', 'yaml', 'yml', 'xml', 'ini', 'js', 'ts'];
+    private const EXTENSIONS = ['php', 'yaml', 'yml', 'xml', 'ini', 'js', 'ts', 'py', 'java', 'go', 'rb'];
 
     private const PATTERNS = [
         [
@@ -70,11 +70,11 @@ class A02Analyzer
         ],
         [
             'id'          => 'a02.config.hardcoded_credentials',
-            'regex'       => '/(?:password|passwd|secret|api_key)\s*=\s*[\'"][^\'"]{3,}[\'"]/i',
+            'regex'       => '/(?:password|passwd|secret|api_key)\s*:?=\s*[\'"][^\'"]{3,}[\'"]/i',
             'title'       => 'Identifiant hardcodé dans le code source',
             'description' => "Un mot de passe, secret ou clé d'API semble être écrit en dur dans le code. Utiliser des variables d'environnement et ne jamais committer des secrets dans le dépôt.",
             'severity'    => Finding::SEVERITY_HIGH,
-            'extensions'  => ['php', 'yaml', 'yml'],
+            'extensions'  => ['php', 'yaml', 'yml', 'py', 'java', 'go', 'rb'],
         ],
     ];
 
