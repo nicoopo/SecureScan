@@ -2,9 +2,11 @@
 
 namespace App\Controller;
 
+use App\Entity\Fix;
 use App\Entity\Scan;
 use App\Repository\ScanRepository;
 use App\Service\ChartService;
+use App\Service\FixApplierService;
 use App\Service\ReportGeneratorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,6 +15,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Security\Csrf\CsrfToken;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 final class ReportController extends AbstractController
 {
@@ -109,5 +113,51 @@ final class ReportController extends AbstractController
         return $this->json(['url' => $this->generateUrl('report_public', [
             'token' => $scan->getShareToken()
         ], UrlGeneratorInterface::ABSOLUTE_URL)]);
+    }
+
+    #[Route('/report/fix/{id}/accept', name: 'fix_accept', methods: ['POST'])]
+    public function acceptFix(Fix $fix, Request $request, CsrfTokenManagerInterface $csrfTokenManager, FixApplierService $fixApplier, EntityManagerInterface $em): JsonResponse
+    {
+        $this->assertFixOwner($fix);
+        $this->assertValidCsrf($request, $csrfTokenManager);
+
+        $fix->accept();
+        $em->flush();
+
+        $result = $fixApplier->apply($fix);
+
+        return $this->json([
+            'status'  => $fix->getStatus(),
+            'applied' => $result['applied'],
+            'message' => $result['message'],
+        ]);
+    }
+
+    #[Route('/report/fix/{id}/reject', name: 'fix_reject', methods: ['POST'])]
+    public function rejectFix(Fix $fix, Request $request, CsrfTokenManagerInterface $csrfTokenManager, EntityManagerInterface $em): JsonResponse
+    {
+        $this->assertFixOwner($fix);
+        $this->assertValidCsrf($request, $csrfTokenManager);
+
+        $fix->reject();
+        $em->flush();
+
+        return $this->json(['status' => $fix->getStatus()]);
+    }
+
+    private function assertFixOwner(Fix $fix): void
+    {
+        $owner = $fix->getFinding()?->getScan()?->getProject()?->getOwner();
+        if ($owner !== $this->getUser()) {
+            throw $this->createAccessDeniedException();
+        }
+    }
+
+    private function assertValidCsrf(Request $request, CsrfTokenManagerInterface $csrfTokenManager): void
+    {
+        $token = $request->headers->get('X-CSRF-Token', '');
+        if (!$csrfTokenManager->isTokenValid(new CsrfToken('fix_action', $token))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
     }
 }
