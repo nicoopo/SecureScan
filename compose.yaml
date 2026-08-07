@@ -13,6 +13,7 @@ services:
       APP_SECRET: ${APP_SECRET:-changeme}
       DATABASE_URL: mysql://${MYSQL_USER:-app}:${MYSQL_PASSWORD:-!ChangeMe!}@database:3306/${MYSQL_DATABASE:-app}?serverVersion=8.0&charset=utf8mb4
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       MESSENGER_TRANSPORT_DSN: doctrine://default?auto_setup=0
     volumes:
       - .:/var/www/html
@@ -48,6 +49,7 @@ services:
       target: app
     container_name: securescan_worker
     restart: unless-stopped
+    user: www-data
     command: php bin/console messenger:consume async --limit=50 --time-limit=3600 -vv
     environment:
       APP_ENV: ${APP_ENV:-dev}
