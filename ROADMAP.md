@@ -5,9 +5,10 @@ pistes d'amélioration notées en session. Mis à jour après lecture du sujet c
 
 **Rendu des livrables : jeudi 17h00 (délai impératif). Soutenance : vendredi.**
 
-**État au 07/08 :** les 4 écarts critiques 🔴 sont réglés (PR #39 à #46), Semgrep intégré,
-scan passé en asynchrone, intégration Git automatisée (branche/commit/push/PR) testée de
-bout en bout sur un vrai dépôt. Reste les livrables non-code et, en option, le bonus IA.
+**État au 07/08 (fin de session) :** les 4 écarts critiques 🔴 sont réglés, Semgrep intégré,
+scan asynchrone, intégration Git complète (branche/commit/push/**fork**/PR cross-repo) testée
+de bout en bout sur des dépôts réels (y compris un dépôt externe non possédé), et le bonus IA
+est fait (Mistral). Reste uniquement les livrables non-code.
 
 ---
 
@@ -36,7 +37,7 @@ Réglé :
   et tourne à chaque scan aux côtés des analyseurs existants (PR #42).
 - Le filtre "outil" du dashboard liste maintenant tous les outils réellement produits.
 
-### 2. ✅ Intégration Git automatisée (§2.1.F) — FAIT (PR #45, #46)
+### 2. ✅ Intégration Git automatisée (§2.1.F) — FAIT (PR #45, #46, #50, #51)
 
 Notée 4 pts dans la grille technique ("Système de correction automatisé (template-based +
 Git)") + 1 pt en soutenance ("Intégration Git API & gestion des branches") + fait partie du
@@ -58,6 +59,20 @@ Réglé :
   reste sous contrôle de l'utilisateur).
 - Testé de bout en bout sur un vrai dépôt (`nicoopo/symf_demo`) : branche poussée + PR
   ouverte automatiquement.
+- **Cas des dépôts publics non possédés** (§ soulevée en session) : si le token n'a pas les
+  droits d'écriture sur le dépôt scanné, `GitHubPushService` détecte `permissions.push` via
+  l'API GitHub et bascule automatiquement sur un **fork** du compte associé au token, puis
+  ouvre une **pull request cross-repo** (fork → dépôt d'origine) — le workflow standard pour
+  contribuer à un projet qu'on ne possède pas. Testé de bout en bout sur un dépôt externe réel.
+  Limitation GitHub découverte au passage : un token **fine-grained** ne peut pas créer de fork
+  via l'API (`Resource not accessible by personal access token`, quels que soient les droits
+  accordés) — il faut un **classic token** avec le scope `public_repo` (ou `repo`) pour cette
+  action précise. À documenter dans la doc technique du rendu.
+- `FixApplierService` excluait les fichiers `.json` (`package.json`, `composer.json`...) de
+  toute annotation — bloquant silencieusement tout le flux Git en aval pour les projets dont
+  les findings ne portent que sur des manifestes JSON. `applyJsonAnnotation()` insère une clé
+  `"// [SecureScan] ..."` (convention répandue, ex. `tsconfig.json`) juste après l'accolade
+  ouvrante — reste du JSON valide.
 - Au passage : le worker Messenger tournait en `root` (introduit par le passage en async,
   PR #43) alors que PHP-FPM tourne en `www-data` — les projets clonés via un scan async
   devenaient illisibles en écriture pour `FixApplierService` et pour ce nouveau service Git.
@@ -113,13 +128,25 @@ Ces 4 livrables comptent dans la grille technique/orale même s'ils ne sont pas 
 
 ---
 
-## 💡 Bonus IA (§2.2 — jusqu'à +3 pts sur la note technique)
+## 💡 Bonus IA (§2.2 — jusqu'à +3 pts sur la note technique) — ✅ FAIT (PR #48)
 
-Optionnel mais valorisé : appeler une API LLM (Claude, OpenAI, Mistral) avec le
-`codeSnippet` réel + le type de vulnérabilité OWASP pour générer un fix contextuel (pas un
-template générique), avec explication pédagogique, affiché en diff. `Fix::TYPE_AI` existe
-déjà dans l'entité mais n'est jamais produit — c'est littéralement le seul morceau qui
-manque pour cette fonctionnalité bonus. À ne considérer qu'une fois les écarts 🔴 réglés.
+Optionnel mais valorisé : appeler une API LLM avec le `codeSnippet` réel + le type de
+vulnérabilité OWASP pour générer un fix contextuel (pas un template générique), avec
+explication pédagogique, affiché en diff.
+
+État initial : `Fix::TYPE_AI` existait dans l'entité mais n'était jamais produit.
+
+Réglé :
+- `MistralFixService` appelle l'API Mistral (`mistral-small-latest`, `response_format:
+  json_object`) avec le code réel du finding + le contexte OWASP, via le `HttpClientInterface`
+  de Symfony (pas de nouvelle dépendance HTTP). Sortie structurée `{proposed_code,
+  explanation}`.
+- Bouton "✨ Générer avec l'IA" dans la modale de fix — régénère le `Fix` pending en place
+  (`type=ai`, `proposedCode`, `explanation`), badge "généré par IA" affiché.
+- **Anthropic (Claude) essayé en premier** (`AnthropicFixService`, même architecture) mais le
+  compte n'avait pas de crédit API — remplacé par Mistral qui a un vrai tier gratuit sans
+  carte bancaire, sans changer le contrat côté contrôleur/frontend (juste le service injecté).
+- Testé de bout en bout : génère un texte et une correction cohérents sur un finding réel.
 
 ---
 
