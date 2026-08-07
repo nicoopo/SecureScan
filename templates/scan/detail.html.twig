@@ -1,5 +1,10 @@
 {% extends 'layouts/layout.html.twig' %}
 {% block title %}Scan #{{ scan.id }}{% endblock %}
+{% block head %}
+    {% if scan.status in ['pending', 'running'] %}
+        <meta http-equiv="refresh" content="3">
+    {% endif %}
+{% endblock %}
 {% block content %}
 <div class="max-w-6xl mx-auto px-6 py-8">
 
