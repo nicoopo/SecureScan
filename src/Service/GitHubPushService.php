@@ -93,12 +93,45 @@ class GitHubPushService
 
             $data = $response->toArray(false);
 
-            return $data['html_url'] ?? null;
+            if ($response->getStatusCode() === 201) {
+                return $data['html_url'] ?? null;
+            }
+
+            // 422 "A pull request already exists for {owner}:{branch}" — pas une erreur,
+            // le scan avait déjà une PR ouverte (fix précédent sur le même scan/branche).
+            $existing = $this->findExistingPullRequest($owner, $repo, $branch);
+            if ($existing !== null) {
+                return $existing;
+            }
+
+            $this->logger->error('[GitHubPushService] Échec de la création de la pull request ({status}) : {message}', [
+                'status'  => $response->getStatusCode(),
+                'message' => $data['message'] ?? 'réponse inattendue',
+            ]);
+
+            return null;
         } catch (\Throwable $e) {
             $this->logger->error('[GitHubPushService] Échec de la création de la pull request : {message}', [
                 'message' => $e->getMessage(),
             ]);
 
+            return null;
+        }
+    }
+
+    private function findExistingPullRequest(string $owner, string $repo, string $branch): ?string
+    {
+        try {
+            $response = $this->httpClient->request('GET', "https://api.github.com/repos/{$owner}/{$repo}/pulls", [
+                'auth_bearer' => $this->githubToken,
+                'headers'     => ['Accept' => 'application/vnd.github+json', 'User-Agent' => 'SecureScan'],
+                'query'       => ['head' => "{$owner}:{$branch}", 'state' => 'open'],
+            ]);
+
+            $pulls = $response->toArray(false);
+
+            return $pulls[0]['html_url'] ?? null;
+        } catch (\Throwable) {
             return null;
         }
     }
