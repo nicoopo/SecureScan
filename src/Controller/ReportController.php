@@ -5,7 +5,7 @@ namespace App\Controller;
 use App\Entity\Fix;
 use App\Entity\Scan;
 use App\Repository\ScanRepository;
-use App\Service\AnthropicFixService;
+use App\Service\MistralFixService;
 use App\Service\ChartService;
 use App\Service\FixApplierService;
 use App\Service\GitFixWorkflowService;
@@ -161,7 +161,7 @@ final class ReportController extends AbstractController
     }
 
     #[Route('/report/fix/{id}/generate-ai', name: 'fix_generate_ai', methods: ['POST'])]
-    public function generateAiFix(Fix $fix, Request $request, CsrfTokenManagerInterface $csrfTokenManager, AnthropicFixService $anthropicFix, EntityManagerInterface $em): JsonResponse
+    public function generateAiFix(Fix $fix, Request $request, CsrfTokenManagerInterface $csrfTokenManager, MistralFixService $mistralFix, EntityManagerInterface $em): JsonResponse
     {
         $this->assertFixOwner($fix);
         $this->assertValidCsrf($request, $csrfTokenManager);
@@ -170,7 +170,7 @@ final class ReportController extends AbstractController
             return $this->json(['success' => false, 'message' => 'Ce fix a déjà été traité.'], 409);
         }
 
-        $result = $anthropicFix->generate($fix->getFinding());
+        $result = $mistralFix->generate($fix->getFinding());
         if ($result === null) {
             return $this->json([
                 'success' => false,

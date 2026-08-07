@@ -91,7 +91,7 @@ export default class extends Controller {
                 this.proposedTarget.textContent = data.proposedCode;
                 this.typeTagTarget.textContent = '✨ généré par IA';
 
-                this.showToast('success', 'Correction générée par Claude.');
+                this.showToast('success', 'Correction générée par IA.');
             })
             .catch(() => {
                 this.showToast('error', 'Échec de la génération IA.');
