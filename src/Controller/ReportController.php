@@ -7,6 +7,8 @@ use App\Entity\Scan;
 use App\Repository\ScanRepository;
 use App\Service\ChartService;
 use App\Service\FixApplierService;
+use App\Service\GitFixWorkflowService;
+use App\Service\GitHubPushService;
 use App\Service\ReportGeneratorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -116,7 +118,7 @@ final class ReportController extends AbstractController
     }
 
     #[Route('/report/fix/{id}/accept', name: 'fix_accept', methods: ['POST'])]
-    public function acceptFix(Fix $fix, Request $request, CsrfTokenManagerInterface $csrfTokenManager, FixApplierService $fixApplier, EntityManagerInterface $em): JsonResponse
+    public function acceptFix(Fix $fix, Request $request, CsrfTokenManagerInterface $csrfTokenManager, FixApplierService $fixApplier, GitFixWorkflowService $gitWorkflow, EntityManagerInterface $em): JsonResponse
     {
         $this->assertFixOwner($fix);
         $this->assertValidCsrf($request, $csrfTokenManager);
@@ -125,12 +127,36 @@ final class ReportController extends AbstractController
         $em->flush();
 
         $result = $fixApplier->apply($fix);
+        $scan   = $fix->getFinding()?->getScan();
+        $fixBranch = null;
+
+        if ($result['applied'] && $scan) {
+            $fixBranch = $gitWorkflow->ensureFixBranch($scan);
+            $gitWorkflow->commitFix(
+                $scan,
+                $fix->getFilePath(),
+                sprintf('[SecureScan] %s : %s', $fix->getFinding()->getOwaspCategory(), $fix->getFinding()->getTitle())
+            );
+            $em->flush();
+        }
 
         return $this->json([
-            'status'  => $fix->getStatus(),
-            'applied' => $result['applied'],
-            'message' => $result['message'],
+            'status'    => $fix->getStatus(),
+            'applied'   => $result['applied'],
+            'message'   => $result['message'],
+            'fixBranch' => $fixBranch,
         ]);
+    }
+
+    #[Route('/report/{id}/push-fixes', name: 'report_push_fixes', methods: ['POST'])]
+    public function pushFixes(Scan $scan, Request $request, CsrfTokenManagerInterface $csrfTokenManager, GitHubPushService $gitHubPush): JsonResponse
+    {
+        if ($scan->getProject()->getOwner() !== $this->getUser()) {
+            throw $this->createAccessDeniedException();
+        }
+        $this->assertValidCsrf($request, $csrfTokenManager, 'push_fixes');
+
+        return $this->json($gitHubPush->push($scan));
     }
 
     #[Route('/report/fix/{id}/reject', name: 'fix_reject', methods: ['POST'])]
@@ -153,10 +179,10 @@ final class ReportController extends AbstractController
         }
     }
 
-    private function assertValidCsrf(Request $request, CsrfTokenManagerInterface $csrfTokenManager): void
+    private function assertValidCsrf(Request $request, CsrfTokenManagerInterface $csrfTokenManager, string $tokenId = 'fix_action'): void
     {
         $token = $request->headers->get('X-CSRF-Token', '');
-        if (!$csrfTokenManager->isTokenValid(new CsrfToken('fix_action', $token))) {
+        if (!$csrfTokenManager->isTokenValid(new CsrfToken($tokenId, $token))) {
             throw $this->createAccessDeniedException('Jeton CSRF invalide.');
         }
     }
