@@ -140,12 +140,17 @@ class Finding
 
     public function hasPendingFix(): bool
     {
+        return $this->getPendingFix() !== null;
+    }
+
+    public function getPendingFix(): ?Fix
+    {
         foreach ($this->fixes as $fix) {
             if ($fix->getStatus() === Fix::STATUS_PENDING) {
-                return true;
+                return $fix;
             }
         }
-        return false;
+        return null;
     }
 
     // -------------------------------------------------------------------------

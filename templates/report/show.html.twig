@@ -79,17 +79,20 @@
         </div>
 
         {# Table des findings #}
-        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden"
+             data-controller="report-filters fix-modal"
+             data-fix-modal-csrf-token-value="{{ csrf_token('fix_action') }}">
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
                 <h2 class="text-sm font-semibold text-gray-900">
                     Findings détectés
-                    <span id="findingCount"
+                    <span data-report-filters-target="count"
                           class="ml-2 text-xs font-normal text-gray-400">
                         {{ scan.findings|length }} / {{ scan.findings|length }}
                     </span>
                 </h2>
                 <div class="flex gap-2">
-                    <select id="filterSev" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 text-gray-700">
+                    <select data-report-filters-target="severity" data-action="change->report-filters#apply"
+                            class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 text-gray-700">
                         <option value="">Toutes sévérités</option>
                         <option value="critical" {{ filters.severity == 'critical' ? 'selected' }}>Critique</option>
                         <option value="high"     {{ filters.severity == 'high'     ? 'selected' }}>Haute</option>
@@ -97,14 +100,16 @@
                         <option value="low"      {{ filters.severity == 'low'      ? 'selected' }}>Basse</option>
                     </select>
 
-                    <select id="filterOwasp" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 text-gray-700">
+                    <select data-report-filters-target="owasp" data-action="change->report-filters#apply"
+                            class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 text-gray-700">
                         <option value="">Toutes catégories</option>
                         {% for code, label in constant('App\\Entity\\Finding::OWASP_LABELS') %}
                             <option value="{{ code }}" {{ filters.owasp == code ? 'selected' }}>{{ code }} — {{ label }}</option>
                         {% endfor %}
                     </select>
 
-                    <select id="filterTool" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 text-gray-700">
+                    <select data-report-filters-target="tool" data-action="change->report-filters#apply"
+                            class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 text-gray-700">
                         <option value="">Tous les outils</option>
                         <option value="semgrep"    {{ filters.tool == 'semgrep'    ? 'selected' }}>Semgrep</option>
                         <option value="npm_audit"  {{ filters.tool == 'npm_audit'  ? 'selected' }}>npm audit</option>
@@ -128,7 +133,8 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                 {% for finding in scan.findings %}
-                    <tr class="hover:bg-gray-50 finding-row"
+                    <tr class="hover:bg-gray-50"
+                        data-report-filters-target="row"
                         data-severity="{{ finding.severity }}"
                         data-owasp="{{ finding.owaspCategory }}"
                         data-tool="{{ finding.tool }}">
@@ -149,10 +155,27 @@
                         <td class="px-4 py-3 text-gray-500">{{ finding.owaspCategory }}</td>
                         <td class="px-4 py-3 text-gray-400">{{ finding.tool }}</td>
                         <td class="px-4 py-3">
-                            {% if finding.hasPendingFix() %}
-                                <a href="#" class="text-blue-600 hover:underline">Voir fix</a>
-                            {% elseif finding.acceptedFix %}
-                                <span class="text-green-600">Appliqué</span>
+                            {% set fix = finding.pendingFix ?? finding.acceptedFix %}
+                            {% if fix %}
+                                <button type="button"
+                                        data-action="fix-modal#open"
+                                        class="inline-flex items-center gap-1 font-medium
+                                            {{ fix.status == constant('App\\Entity\\Fix::STATUS_ACCEPTED') ? 'text-green-600' : 'text-blue-600 hover:underline' }}"
+                                        data-fix-id="{{ fix.id }}"
+                                        data-fix-status="{{ fix.status }}"
+                                        data-title="{{ finding.title }}"
+                                        data-owasp="{{ finding.owaspCategory }}"
+                                        data-explanation="{{ fix.explanation|e('html_attr') }}"
+                                        data-original="{{ fix.originalCode|e('html_attr') }}"
+                                        data-proposed="{{ fix.proposedCode|e('html_attr') }}"
+                                        data-file="{{ fix.filePath }}"
+                                        data-line="{{ fix.lineStart }}">
+                                    {% if fix.status == constant('App\\Entity\\Fix::STATUS_ACCEPTED') %}
+                                        ✓ Appliqué
+                                    {% else %}
+                                        Voir fix
+                                    {% endif %}
+                                </button>
                             {% else %}
                                 <span class="text-gray-300">—</span>
                             {% endif %}
@@ -161,51 +184,65 @@
                 {% endfor %}
                 </tbody>
             </table>
+
+            {# Modale de correction #}
+            <div data-fix-modal-target="overlay"
+                 data-action="click->fix-modal#backdropClose"
+                 class="hidden opacity-0 transition-opacity duration-150 fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 flex items-center justify-center px-4">
+                <div data-fix-modal-target="panel"
+                     class="opacity-0 scale-95 transition-all duration-150 ease-out bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto">
+                    <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-gray-100">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span data-fix-modal-target="badge"
+                                      class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-100"></span>
+                                <span class="text-[11px] uppercase tracking-wide text-gray-400 font-medium">Correction proposée</span>
+                            </div>
+                            <h3 data-fix-modal-target="title" class="text-base font-semibold text-gray-900"></h3>
+                            <p data-fix-modal-target="location" class="text-xs font-mono text-gray-400 mt-1"></p>
+                        </div>
+                        <button type="button" data-action="fix-modal#close"
+                                class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+                            &times;
+                        </button>
+                    </div>
+
+                    <div class="px-6 py-5 space-y-5 text-sm">
+                        <div class="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
+                            <p class="text-xs font-semibold text-blue-900 mb-1">Explication</p>
+                            <p data-fix-modal-target="explanation" class="text-blue-900/90 leading-relaxed"></p>
+                        </div>
+
+                        <div data-fix-modal-target="originalWrap">
+                            <p class="text-xs font-medium text-gray-500 mb-1.5 flex items-center gap-1">
+                                <span class="text-red-500">−</span> Code actuel
+                            </p>
+                            <pre class="bg-red-50 border border-red-100 rounded-lg p-3 overflow-x-auto"><code data-fix-modal-target="original" class="font-mono text-xs text-red-900 whitespace-pre"></code></pre>
+                        </div>
+
+                        <div>
+                            <p class="text-xs font-medium text-gray-500 mb-1.5 flex items-center gap-1">
+                                <span class="text-green-500">+</span> Correction proposée
+                            </p>
+                            <pre class="bg-green-50 border border-green-100 rounded-lg p-3 overflow-x-auto"><code data-fix-modal-target="proposed" class="font-mono text-xs text-green-900 whitespace-pre"></code></pre>
+                        </div>
+                    </div>
+
+                    <div data-fix-modal-target="actions" class="hidden flex justify-end gap-2 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+                        <button type="button" data-action="fix-modal#reject"
+                                class="border border-gray-300 hover:bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            Rejeter
+                        </button>
+                        <button type="button" data-action="fix-modal#accept"
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            Accepter
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div data-fix-modal-target="toast" class="hidden"></div>
         </div>
 
     </div>
-{% endblock %}
-
-{% block javascripts %}
-    {{ parent() }}
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-
-        function applyFilters() {
-            const sev   = document.getElementById('filterSev').value;
-            const owasp = document.getElementById('filterOwasp').value;
-            const tool  = document.getElementById('filterTool').value;
-
-            let visible = 0;
-            document.querySelectorAll('.finding-row').forEach(row => {
-                const show =
-                    (!sev   || row.dataset.severity === sev)  &&
-                    (!owasp || row.dataset.owasp    === owasp) &&
-                    (!tool  || row.dataset.tool     === tool);
-                row.style.display = show ? '' : 'none';
-                if (show) visible++;
-            });
-
-            // Met à jour le badge de count
-            document.getElementById('findingCount').textContent =
-                visible + ' / ' + document.querySelectorAll('.finding-row').length;
-
-            // Persiste dans l'URL sans rechargement
-            const params = new URLSearchParams();
-            if (sev)   params.set('severity', sev);
-            if (owasp) params.set('owasp', owasp);
-            if (tool)  params.set('tool', tool);
-            const newUrl = params.toString()
-                ? window.location.pathname + '?' + params.toString()
-                : window.location.pathname;
-            history.replaceState(null, '', newUrl);
-        }
-
-        ['filterSev', 'filterOwasp', 'filterTool'].forEach(id => {
-            document.getElementById(id).addEventListener('change', applyFilters);
-        });
-
-        // Applique au chargement si des params sont dans l'URL
-        applyFilters();
-    </script>
 {% endblock %}

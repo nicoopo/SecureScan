@@ -13,6 +13,7 @@ use App\Service\Analyzer\A07Analyzer;
 use App\Service\Analyzer\A08Analyzer;
 use App\Service\Analyzer\A09Analyzer;
 use App\Service\Analyzer\A010Analyzer;
+use App\Service\FixGeneratorService;
 use App\Service\ProjectCloner;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -31,6 +32,7 @@ class ScanOrchestrator
         private readonly A09Analyzer $a09Analyzer,
         private readonly A010Analyzer  $a010Analyzer,
         private readonly ProjectCloner $cloner,
+        private readonly FixGeneratorService $fixGenerator,
         private readonly EntityManagerInterface $em,
         private readonly LoggerInterface        $logger,
     ) {}
@@ -77,6 +79,9 @@ class ScanOrchestrator
             foreach ($findings as $finding) {
                 $scan->addFinding($finding);
                 $this->em->persist($finding);
+
+                $fix = $this->fixGenerator->generate($finding);
+                $this->em->persist($fix);
             }
 
             $scan->finish();
