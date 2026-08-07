@@ -5,9 +5,9 @@ pistes d'amélioration notées en session. Mis à jour après lecture du sujet c
 
 **Rendu des livrables : jeudi 17h00 (délai impératif). Soutenance : vendredi.**
 
-**État au 07/08 :** points 🔴 1, 3, 4 réglés (PR #39, #40, #41), Semgrep intégré (PR #42),
-scan passé en asynchrone via le worker Messenger (PR #43). Reste le point 🔴 2
-(intégration Git automatisée) — le plus gros chantier restant — et les livrables non-code.
+**État au 07/08 :** les 4 écarts critiques 🔴 sont réglés (PR #39 à #46), Semgrep intégré,
+scan passé en asynchrone, intégration Git automatisée (branche/commit/push/PR) testée de
+bout en bout sur un vrai dépôt. Reste les livrables non-code et, en option, le bonus IA.
 
 ---
 
@@ -36,24 +36,32 @@ Réglé :
   et tourne à chaque scan aux côtés des analyseurs existants (PR #42).
 - Le filtre "outil" du dashboard liste maintenant tous les outils réellement produits.
 
-### 2. Intégration Git automatisée (§2.1.F) — quasi entièrement absente
+### 2. ✅ Intégration Git automatisée (§2.1.F) — FAIT (PR #45, #46)
 
 Notée 4 pts dans la grille technique ("Système de correction automatisé (template-based +
 Git)") + 1 pt en soutenance ("Intégration Git API & gestion des branches") + fait partie du
 workflow complet démontré à l'oral ("soumission → analyse → résultats → correction → **push**").
 
-Ce qui existe : `Scan::fixBranch` (champ jamais rempli), `FixApplierService` (écrit
-directement dans le clone local sur disque, jamais dans une branche Git dédiée).
+État initial : `Scan::fixBranch` n'était jamais rempli, `FixApplierService` écrivait
+directement dans le clone local sur disque, jamais dans une branche Git dédiée. Aucune
+intégration avec l'API GitHub.
 
-Ce qui manque entièrement :
-- Créer une branche `fix/securescan-{date}` dans le clone local avant d'appliquer les fixes acceptés
-- Committer les corrections sur cette branche
-- Pusher via l'API GitHub (pas de client Octokit-équivalent en PHP dans le projet, ex.
-  `knplabs/github-api` ou simplement `git push` en CLI comme `ProjectCloner` fait déjà `git clone`)
-- Idéalement ouvrir une pull request automatiquement
-
-**C'est le plus gros trou du projet par rapport au sujet.** Sans ça, le workflow complet
-demandé en livrable #4 et en démo orale n'est pas démontrable de bout en bout.
+Réglé :
+- `GitFixWorkflowService` crée/checkout une branche `fix/securescan-{date}` dans le clone
+  local dès le premier fix accepté d'un scan, et commit chaque correction appliquée sur
+  cette branche.
+- `GitHubPushService` pousse la branche vers GitHub (`git push` avec un token embarqué dans
+  l'URL du remote, cohérent avec le `git clone` déjà fait par `ProjectCloner`) puis ouvre une
+  pull request via l'API REST GitHub.
+- Bouton "Pousser vers GitHub" dans le rapport, déclenchement manuel explicite plutôt
+  qu'automatique à chaque fix accepté (le push est une action visible côté GitHub, elle
+  reste sous contrôle de l'utilisateur).
+- Testé de bout en bout sur un vrai dépôt (`nicoopo/symf_demo`) : branche poussée + PR
+  ouverte automatiquement.
+- Au passage : le worker Messenger tournait en `root` (introduit par le passage en async,
+  PR #43) alors que PHP-FPM tourne en `www-data` — les projets clonés via un scan async
+  devenaient illisibles en écriture pour `FixApplierService` et pour ce nouveau service Git.
+  Corrigé en faisant tourner le worker en `www-data` (PR #45).
 
 ### 3. ✅ Détection automatique du langage/framework (§2.1.A) — FAIT (PR #40)
 
