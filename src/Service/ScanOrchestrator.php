@@ -59,6 +59,8 @@ class ScanOrchestrator
             return;
         }
 
+        $scan->getProject()->setLanguage($this->cloner->detectLanguage($projectPath));
+
         $scan->setStatus(Scan::STATUS_RUNNING);
         $this->em->flush();
 
