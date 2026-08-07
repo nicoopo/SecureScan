@@ -8,7 +8,7 @@ import { Controller } from '@hotwired/stimulus';
 export default class extends Controller {
     static targets = [
         'overlay', 'panel', 'badge', 'title', 'location',
-        'explanation', 'originalWrap', 'original', 'proposed', 'actions', 'toast',
+        'explanation', 'originalWrap', 'original', 'proposed', 'actions', 'toast', 'typeTag',
     ];
     static values = { csrfToken: String };
 
@@ -27,6 +27,7 @@ export default class extends Controller {
             : '';
         this.explanationTarget.textContent = d.explanation || 'Aucune explication disponible.';
         this.proposedTarget.textContent = d.proposed || '';
+        this.typeTagTarget.textContent = d.fixType === 'ai' ? '✨ généré par IA' : '';
 
         if (d.original) {
             this.originalWrapTarget.classList.remove('hidden');
@@ -63,6 +64,42 @@ export default class extends Controller {
 
     accept() { this.decide('accept'); }
     reject() { this.decide('reject'); }
+
+    generateAi() {
+        if (!this.current) return;
+        const button = this.current;
+        const fixId  = button.dataset.fixId;
+
+        this.actionsTarget.querySelectorAll('button').forEach((b) => (b.disabled = true));
+
+        fetch(`/report/fix/${fixId}/generate-ai`, {
+            method: 'POST',
+            headers: { 'X-CSRF-Token': this.csrfTokenValue },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (!data.success) {
+                    this.showToast('warning', data.message);
+                    return;
+                }
+
+                button.dataset.fixType = data.type;
+                button.dataset.explanation = data.explanation;
+                button.dataset.proposed = data.proposedCode;
+
+                this.explanationTarget.textContent = data.explanation;
+                this.proposedTarget.textContent = data.proposedCode;
+                this.typeTagTarget.textContent = '✨ généré par IA';
+
+                this.showToast('success', 'Correction générée par Claude.');
+            })
+            .catch(() => {
+                this.showToast('error', 'Échec de la génération IA.');
+            })
+            .finally(() => {
+                this.actionsTarget.querySelectorAll('button').forEach((b) => (b.disabled = false));
+            });
+    }
 
     decide(action) {
         if (!this.current) return;

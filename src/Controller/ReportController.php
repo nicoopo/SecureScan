@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Fix;
 use App\Entity\Scan;
 use App\Repository\ScanRepository;
+use App\Service\AnthropicFixService;
 use App\Service\ChartService;
 use App\Service\FixApplierService;
 use App\Service\GitFixWorkflowService;
@@ -157,6 +158,37 @@ final class ReportController extends AbstractController
         $this->assertValidCsrf($request, $csrfTokenManager, 'push_fixes');
 
         return $this->json($gitHubPush->push($scan));
+    }
+
+    #[Route('/report/fix/{id}/generate-ai', name: 'fix_generate_ai', methods: ['POST'])]
+    public function generateAiFix(Fix $fix, Request $request, CsrfTokenManagerInterface $csrfTokenManager, AnthropicFixService $anthropicFix, EntityManagerInterface $em): JsonResponse
+    {
+        $this->assertFixOwner($fix);
+        $this->assertValidCsrf($request, $csrfTokenManager);
+
+        if (!$fix->isPending()) {
+            return $this->json(['success' => false, 'message' => 'Ce fix a déjà été traité.'], 409);
+        }
+
+        $result = $anthropicFix->generate($fix->getFinding());
+        if ($result === null) {
+            return $this->json([
+                'success' => false,
+                'message' => "Génération IA indisponible (clé API absente, requête refusée, ou erreur).",
+            ]);
+        }
+
+        $fix->setType(Fix::TYPE_AI)
+            ->setProposedCode($result['proposedCode'])
+            ->setExplanation($result['explanation']);
+        $em->flush();
+
+        return $this->json([
+            'success'      => true,
+            'type'         => $fix->getType(),
+            'proposedCode' => $fix->getProposedCode(),
+            'explanation'  => $fix->getExplanation(),
+        ]);
     }
 
     #[Route('/report/fix/{id}/reject', name: 'fix_reject', methods: ['POST'])]
