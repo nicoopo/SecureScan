@@ -16,6 +16,9 @@ class Project
     public const LANGUAGE_JAVASCRIPT = 'javascript';
     public const LANGUAGE_PYTHON     = 'python';
     public const LANGUAGE_NODEJS     = 'nodejs';
+    public const LANGUAGE_GO         = 'go';
+    public const LANGUAGE_RUBY       = 'ruby';
+    public const LANGUAGE_JAVA       = 'java';
     public const LANGUAGE_UNKNOWN    = 'unknown';
 
     public const SOURCE_GIT = 'git';
