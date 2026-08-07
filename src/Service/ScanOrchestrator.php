@@ -13,6 +13,7 @@ use App\Service\Analyzer\A07Analyzer;
 use App\Service\Analyzer\A08Analyzer;
 use App\Service\Analyzer\A09Analyzer;
 use App\Service\Analyzer\A010Analyzer;
+use App\Service\Analyzer\SemgrepAnalyzer;
 use App\Service\FixGeneratorService;
 use App\Service\ProjectCloner;
 use Doctrine\ORM\EntityManagerInterface;
@@ -31,6 +32,7 @@ class ScanOrchestrator
         private readonly A08Analyzer $a08Analyzer,
         private readonly A09Analyzer $a09Analyzer,
         private readonly A010Analyzer  $a010Analyzer,
+        private readonly SemgrepAnalyzer $semgrepAnalyzer,
         private readonly ProjectCloner $cloner,
         private readonly FixGeneratorService $fixGenerator,
         private readonly EntityManagerInterface $em,
@@ -76,6 +78,7 @@ class ScanOrchestrator
                 ...$this->a08Analyzer->analyze($scan, $projectPath),
                 ...$this->a09Analyzer->analyze($scan, $projectPath),
                 ...$this->a010Analyzer->analyze($scan, $projectPath),
+                ...$this->semgrepAnalyzer->analyze($scan, $projectPath),
             ];
 
             foreach ($findings as $finding) {
