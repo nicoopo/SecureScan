@@ -6,7 +6,7 @@ use App\Entity\Scan;
 
 class A03Analyzer
 {
-    private const TOOL = 'securescan';
+    private const TOOL = Finding::TOOL_SECURESCAN;
 
     private const VULNERABLE_PACKAGES = [
         'phpmailer/phpmailer' => [
@@ -74,8 +74,8 @@ class A03Analyzer
             }
         }
 
-        // Composer audit
-        $output = shell_exec("cd " . escapeshellarg($projectPath) . " && composer audit --format=json 2>/dev/null");
+        // Composer audit (--locked : audite composer.lock directement, sans nécessiter `composer install`)
+        $output = shell_exec("cd " . escapeshellarg($projectPath) . " && composer audit --locked --format=json 2>/dev/null");
         if ($output) {
             $audit = json_decode($output, true);
             $advisories = $audit['advisories'] ?? [];
@@ -88,7 +88,8 @@ class A03Analyzer
                         ($advisory['title'] ?? '') . ' — ' . ($advisory['link'] ?? ''),
                         Finding::SEVERITY_HIGH,
                         'composer.json',
-                        1
+                        1,
+                        Finding::TOOL_COMPOSER_AUDIT
                     );
                 }
             }
@@ -139,7 +140,8 @@ class A03Analyzer
                     "Sévérité : " . ($vuln['severity'] ?? '?') . ". " . ($vuln['url'] ?? ''),
                     $severity,
                     'package.json',
-                    1
+                    1,
+                    Finding::TOOL_NPM_AUDIT
                 );
             }
         }
@@ -182,7 +184,8 @@ class A03Analyzer
                         implode(' ', $vuln['description'] ?? []) ?: 'Voir pip-audit pour les détails.',
                         Finding::SEVERITY_HIGH,
                         'requirements.txt',
-                        1
+                        1,
+                        Finding::TOOL_PIP_AUDIT
                     );
                 }
             }
@@ -221,7 +224,8 @@ class A03Analyzer
                         $osv['summary'] ?? '',
                         Finding::SEVERITY_HIGH,
                         'go.mod',
-                        1
+                        1,
+                        Finding::TOOL_GOVULNCHECK
                     );
                 }
             }
@@ -271,7 +275,8 @@ class A03Analyzer
                     $advisory['description'] ?? '',
                     Finding::SEVERITY_HIGH,
                     'Gemfile.lock',
-                    1
+                    1,
+                    Finding::TOOL_BUNDLER_AUDIT
                 );
             }
         }
@@ -301,12 +306,12 @@ class A03Analyzer
         return $findings;
     }
 
-    private function buildFinding(Scan $scan, string $ruleId, string $title, string $description, string $severity, string $filePath, int $line): Finding
+    private function buildFinding(Scan $scan, string $ruleId, string $title, string $description, string $severity, string $filePath, int $line, string $tool = self::TOOL): Finding
     {
         $finding = new Finding();
         $finding
             ->setScan($scan)
-            ->setTool(self::TOOL)
+            ->setTool($tool)
             ->setSeverity($severity)
             ->setOwaspCategory(Finding::OWASP_A03)
             ->setRuleId($ruleId)
