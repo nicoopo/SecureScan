@@ -154,10 +154,16 @@ Réglé :
   part dans `src/`.
 - **Export CSV/JSON**, **tendances entre scans**, **partage d'équipe** (un projet = un seul
   owner actuellement) : non demandés par le sujet, à garder pour après le rendu.
-- **Tests unitaires** — ✅ tous les services notés initialement sont couverts : les
-  10 analyseurs OWASP (A01-A010), `ProjectCloner::detectLanguage`,
-  `FixApplierService`, `FixGeneratorService`, `GitFixWorkflowService` et
-  `ChartService` (119 tests, `tests/Service/`). Les patterns regex se chevauchent
+- **Tests unitaires** — ✅ tous les services notés initialement sont couverts, plus
+  `ScanOrchestrator` (l'orchestrateur central du scan) en bonus : les 10 analyseurs
+  OWASP (A01-A010), `ProjectCloner::detectLanguage`, `FixApplierService`,
+  `FixGeneratorService`, `GitFixWorkflowService`, `ChartService` et
+  `ScanOrchestrator` (125 tests, `tests/Service/`).
+  `ScanOrchestratorTest` mocke les 11 analyseurs + cloner + fix generator + EM + logger
+  (15 dépendances) : clonage conditionnel du projet, échec propre si le clone reste
+  introuvable (aucun analyseur appelé), agrégation des findings de tous les
+  analyseurs avec génération/persistance des fixes, et capture d'exception d'un
+  analyseur → scan en échec sans rien persister. Les patterns regex se chevauchent
   parfois volontairement (ex. `setcookie()` déclenche à la fois `no_httponly` et
   `no_secure`, `eval($_POST[...])` déclenche à la fois la règle spécifique et la
   règle générique) — verrouillé par des tests dédiés plutôt que corrigé, pour ne pas
