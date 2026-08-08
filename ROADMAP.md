@@ -155,10 +155,18 @@ Réglé :
 - **Export CSV/JSON**, **tendances entre scans**, **partage d'équipe** (un projet = un seul
   owner actuellement) : non demandés par le sujet, à garder pour après le rendu.
 - **Tests unitaires** — ✅ tous les services notés initialement sont couverts, plus
-  `ScanOrchestrator` et `ReportGeneratorService` en bonus : les 10 analyseurs OWASP
-  (A01-A010), `ProjectCloner::detectLanguage`, `FixApplierService`,
-  `FixGeneratorService`, `GitFixWorkflowService`, `ChartService`, `ScanOrchestrator`
-  et `ReportGeneratorService` (127 tests, `tests/Service/`).
+  `ScanOrchestrator`, `ReportGeneratorService` et `MistralFixService` en bonus : les
+  10 analyseurs OWASP (A01-A010), `ProjectCloner::detectLanguage`,
+  `FixApplierService`, `FixGeneratorService`, `GitFixWorkflowService`,
+  `ChartService`, `ScanOrchestrator`, `ReportGeneratorService` et
+  `MistralFixService` (135 tests, `tests/Service/`).
+  `MistralFixServiceTest` utilise `MockHttpClient`/`MockResponse` de Symfony plutôt
+  que des mocks PHPUnit manuels — plus réaliste (exerce la vraie normalisation des
+  options HTTP : `auth_bearer` devient un header `Authorization`, `json` devient un
+  `body` JSON brut). Couvre les deux garde-fous (clé API vide, snippet manquant —
+  API jamais appelée), le succès avec vérification du payload envoyé, le statut
+  d'erreur HTTP (loggé), la réponse sans contenu, le JSON invalide/incomplet, et
+  l'échec de transport (`MockResponse` avec l'option `error`, logué).
   `ReportGeneratorServiceTest` rend le vrai template `report/pdf.html.twig` via un
   `Twig\Environment` autonome (pas besoin du bridge Symfony) et un vrai Dompdf —
   a mis au jour un **bug corrigé au passage** : `generate()` faisait
