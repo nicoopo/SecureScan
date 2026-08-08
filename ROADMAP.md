@@ -154,12 +154,22 @@ Réglé :
   part dans `src/`.
 - **Export CSV/JSON**, **tendances entre scans**, **partage d'équipe** (un projet = un seul
   owner actuellement) : non demandés par le sujet, à garder pour après le rendu.
-- **Tests unitaires** — ✅ tous les services notés initialement sont couverts, plus
-  `ScanOrchestrator`, `ReportGeneratorService` et `MistralFixService` en bonus : les
-  10 analyseurs OWASP (A01-A010), `ProjectCloner::detectLanguage`,
-  `FixApplierService`, `FixGeneratorService`, `GitFixWorkflowService`,
-  `ChartService`, `ScanOrchestrator`, `ReportGeneratorService` et
-  `MistralFixService` (135 tests, `tests/Service/`).
+- **Tests unitaires** — ✅ tous les services du répertoire `src/Service/` sont
+  désormais couverts : les 10 analyseurs OWASP (A01-A010),
+  `ProjectCloner::detectLanguage`, `FixApplierService`, `FixGeneratorService`,
+  `GitFixWorkflowService`, `ChartService`, `ScanOrchestrator`,
+  `ReportGeneratorService`, `MistralFixService` et `GitHubPushService`
+  (164 tests, `tests/Service/`).
+  `GitHubPushServiceTest` mélange deux approches : le `push()` public est testé tel
+  quel pour tous les cas qui n'atteignent pas le vrai `git push` réseau (garde-fous,
+  échec de récupération des infos du dépôt, échec de création du fork) ; le `git
+  push` réel vers github.com est déclenché volontairement en échec **déterministe
+  et sans réseau** en pointant `localPath` vers un répertoire qui n'est pas un dépôt
+  Git (`git push` échoue instantanément côté client : "fatal: not a git
+  repository"). La logique atteignable seulement après un push réussi (ouverture de
+  PR, fallback sur une PR existante en cas de 422, construction du corps de la PR)
+  est testée directement via Reflection sur les méthodes privées — elles ne font
+  que des appels HTTP, entièrement mockables avec `MockHttpClient`.
   `MistralFixServiceTest` utilise `MockHttpClient`/`MockResponse` de Symfony plutôt
   que des mocks PHPUnit manuels — plus réaliste (exerce la vraie normalisation des
   options HTTP : `auth_bearer` devient un header `Authorization`, `json` devient un
