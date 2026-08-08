@@ -155,15 +155,23 @@ Réglé :
 - **Export CSV/JSON**, **tendances entre scans**, **partage d'équipe** (un projet = un seul
   owner actuellement) : non demandés par le sujet, à garder pour après le rendu.
 - **Tests unitaires** — ✅ démarré : les 10 analyseurs OWASP (A01-A010),
-  `ProjectCloner::detectLanguage`, `FixApplierService` et `FixGeneratorService` sont
-  couverts (104 tests, `tests/Service/`). Les patterns regex se chevauchent parfois
-  volontairement (ex. `setcookie()` déclenche à la fois `no_httponly` et `no_secure`,
-  `eval($_POST[...])` déclenche à la fois la règle spécifique et la règle générique) —
-  verrouillé par des tests dédiés plutôt que corrigé, pour ne pas changer le
-  comportement des analyseurs sans décision explicite. Idem pour
-  `FixGeneratorService::TEMPLATES` : l'ordre des clés fait foi (`privilege` avant
-  `hardcoded_admin_bypass`), verrouillé par un test dédié. Restent à couvrir :
-  `GitFixWorkflowService`, `ChartService`.
+  `ProjectCloner::detectLanguage`, `FixApplierService`, `FixGeneratorService` et
+  `GitFixWorkflowService` sont couverts (111 tests, `tests/Service/`). Les patterns
+  regex se chevauchent parfois volontairement (ex. `setcookie()` déclenche à la fois
+  `no_httponly` et `no_secure`, `eval($_POST[...])` déclenche à la fois la règle
+  spécifique et la règle générique) — verrouillé par des tests dédiés plutôt que
+  corrigé, pour ne pas changer le comportement des analyseurs sans décision
+  explicite. Idem pour `FixGeneratorService::TEMPLATES` : l'ordre des clés fait foi
+  (`privilege` avant `hardcoded_admin_bypass`), verrouillé par un test dédié.
+  `GitFixWorkflowServiceTest` est un test d'intégration (vrai dépôt Git temporaire,
+  pas de mock de `shell_exec`) — il a mis au jour un vrai bug **corrigé au passage** :
+  `checkoutBranch()` utilisait `2>/dev/null`, qui n'existe pas sous Windows. Résultat
+  en dev local Windows : la première tentative de checkout échouait toujours, et le
+  fallback `checkout -b` refusait de recréer une branche déjà existante — le service
+  restait silencieusement sur `main` sans jamais rebasculer sur `fix/securescan-*`.
+  Fonctionnait par accident en prod (Docker/Linux, où `/dev/null` existe). Corrigé en
+  choisissant le null device selon `DIRECTORY_SEPARATOR` (`NUL` / `/dev/null`).
+  Reste à couvrir : `ChartService`.
 - **CI GitHub Actions** — ✅ fait : `.github/workflows/tests.yml` lance PHPUnit sur
   push/PR vers `main`/`develop`. `composer install --no-scripts` pour éviter que les
   auto-scripts Symfony (cache:clear...) tentent de se connecter à la base configurée

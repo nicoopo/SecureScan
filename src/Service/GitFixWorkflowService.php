@@ -50,7 +50,11 @@ class GitFixWorkflowService
     {
         $path      = escapeshellarg($projectPath);
         $branchArg = escapeshellarg($branch);
+        // /dev/null n'existe pas sous Windows : sans null device portable, la
+        // tentative de checkout d'une branche existante échoue systématiquement
+        // et le fallback `checkout -b` refuse de recréer une branche déjà là.
+        $null = DIRECTORY_SEPARATOR === '\\' ? 'NUL' : '/dev/null';
 
-        shell_exec("cd {$path} && (git -c safe.directory=* checkout {$branchArg} 2>/dev/null || git -c safe.directory=* checkout -b {$branchArg} 2>&1)");
+        shell_exec("cd {$path} && (git -c safe.directory=* checkout {$branchArg} 2>{$null} || git -c safe.directory=* checkout -b {$branchArg} 2>&1)");
     }
 }
