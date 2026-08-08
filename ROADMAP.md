@@ -213,3 +213,30 @@ Réglé :
   push/PR vers `main`/`develop`. `composer install --no-scripts` pour éviter que les
   auto-scripts Symfony (cache:clear...) tentent de se connecter à la base configurée
   dans `.env` (inutile de toute façon : les tests sont unitaires purs, sans kernel).
+
+---
+
+## 🔵 Ce qu'il reste à tester (hors `src/Service/`, qui est fait à 100%)
+
+Rien d'urgent, mais si l'envie de continuer sur les tests revient, par ordre de valeur :
+
+- **`ProjectVoter`** (`src/Security/Voter/`) — **le plus important des trois** :
+  c'est le seul rempart qui empêche un utilisateur de voir/modifier/scanner les
+  projets d'un autre. Actuellement zéro test dessus. Facile à tester (mock
+  `TokenInterface` + `User`/`Project`), gros gain de confiance pour peu d'effort.
+- **`Scan::computeScore()`** (`src/Entity/Scan.php`) — calcul du score/note (A-F)
+  à partir des pénalités par sévérité. Logique pure, jamais testée directement
+  (seulement traversée indirectement par `ScanOrchestratorTest`, sans assertion sur
+  le score obtenu).
+- **`SemgrepAnalyzer`** (`src/Service/Analyzer/`) — seul analyseur jamais testé
+  individuellement (utilisé uniquement mocké dans `ScanOrchestratorTest`). Sa
+  logique propre — parsing du JSON `semgrep --config auto --json` et mapping vers
+  les catégories OWASP via `metadata.owasp` — n'est couverte par aucun test.
+- **`RunScanMessageHandler`** — petit wrapper (repository → orchestrateur), rapide
+  à couvrir mais faible valeur (peu de logique propre).
+
+Hors scope pour des tests unitaires classiques (nécessiteraient des tests
+fonctionnels avec kernel Symfony — plus lourd, pas commencé) :
+- Les 7 **contrôleurs** (`src/Controller/`)
+- Les **repositories** Doctrine (`src/Repository/`) — s'appuient sur une vraie DB
+- Les **formulaires** (`src/Form/`)
