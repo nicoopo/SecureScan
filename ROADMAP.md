@@ -155,12 +155,14 @@ Réglé :
 - **Export CSV/JSON**, **tendances entre scans**, **partage d'équipe** (un projet = un seul
   owner actuellement) : non demandés par le sujet, à garder pour après le rendu.
 - **Tests unitaires** — ✅ démarré : les 10 analyseurs OWASP (A01-A010),
-  `ProjectCloner::detectLanguage` et `FixApplierService` sont couverts (86 tests,
-  `tests/Service/`). Les patterns regex se chevauchent parfois volontairement (ex.
-  `setcookie()` déclenche à la fois `no_httponly` et `no_secure`, `eval($_POST[...])`
-  déclenche à la fois la règle spécifique et la règle générique) — verrouillé par des
-  tests dédiés plutôt que corrigé, pour ne pas changer le comportement des analyseurs
-  sans décision explicite. Restent à couvrir : `FixGeneratorService`,
+  `ProjectCloner::detectLanguage`, `FixApplierService` et `FixGeneratorService` sont
+  couverts (104 tests, `tests/Service/`). Les patterns regex se chevauchent parfois
+  volontairement (ex. `setcookie()` déclenche à la fois `no_httponly` et `no_secure`,
+  `eval($_POST[...])` déclenche à la fois la règle spécifique et la règle générique) —
+  verrouillé par des tests dédiés plutôt que corrigé, pour ne pas changer le
+  comportement des analyseurs sans décision explicite. Idem pour
+  `FixGeneratorService::TEMPLATES` : l'ordre des clés fait foi (`privilege` avant
+  `hardcoded_admin_bypass`), verrouillé par un test dédié. Restent à couvrir :
   `GitFixWorkflowService`, `ChartService`.
 - **CI GitHub Actions** — ✅ fait : `.github/workflows/tests.yml` lance PHPUnit sur
   push/PR vers `main`/`develop`. `composer install --no-scripts` pour éviter que les
