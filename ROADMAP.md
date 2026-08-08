@@ -155,10 +155,19 @@ Réglé :
 - **Export CSV/JSON**, **tendances entre scans**, **partage d'équipe** (un projet = un seul
   owner actuellement) : non demandés par le sujet, à garder pour après le rendu.
 - **Tests unitaires** — ✅ tous les services notés initialement sont couverts, plus
-  `ScanOrchestrator` (l'orchestrateur central du scan) en bonus : les 10 analyseurs
-  OWASP (A01-A010), `ProjectCloner::detectLanguage`, `FixApplierService`,
-  `FixGeneratorService`, `GitFixWorkflowService`, `ChartService` et
-  `ScanOrchestrator` (125 tests, `tests/Service/`).
+  `ScanOrchestrator` et `ReportGeneratorService` en bonus : les 10 analyseurs OWASP
+  (A01-A010), `ProjectCloner::detectLanguage`, `FixApplierService`,
+  `FixGeneratorService`, `GitFixWorkflowService`, `ChartService`, `ScanOrchestrator`
+  et `ReportGeneratorService` (127 tests, `tests/Service/`).
+  `ReportGeneratorServiceTest` rend le vrai template `report/pdf.html.twig` via un
+  `Twig\Environment` autonome (pas besoin du bridge Symfony) et un vrai Dompdf —
+  a mis au jour un **bug corrigé au passage** : `generate()` faisait
+  `$report->setScan($scan)` mais ne synchronisait jamais le côté inverse
+  (`$scan->setReport($report)`). Résultat : rappeler `generate()` deux fois sur le
+  même `Scan` en mémoire (sans le refetch depuis la DB) créait un second
+  `ScanReport` au lieu de réutiliser l'existant, ce qui aurait violé la contrainte
+  unique du `OneToOne` en base à la deuxième sauvegarde. Corrigé avec un simple
+  `$scan->setReport($report);`.
   `ScanOrchestratorTest` mocke les 11 analyseurs + cloner + fix generator + EM + logger
   (15 dépendances) : clonage conditionnel du projet, échec propre si le clone reste
   introuvable (aucun analyseur appelé), agrégation des findings de tous les

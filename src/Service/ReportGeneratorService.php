@@ -50,6 +50,7 @@ class ReportGeneratorService
         $report = $scan->getReport() ?? new ScanReport();
         $report->setScan($scan);
         $report->setPdfPath('/reports/' . $filename);
+        $scan->setReport($report);
         $this->em->persist($report);
         $this->em->flush();
 
