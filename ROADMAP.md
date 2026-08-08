@@ -3,12 +3,12 @@
 Analyse de l'écart entre le code actuel et le `Sujet_Hackathon_SecureScan_2026.pdf`, plus les
 pistes d'amélioration notées en session. Mis à jour après lecture du sujet complet.
 
-**Rendu des livrables : jeudi 17h00 (délai impératif). Soutenance : vendredi.**
+**Projet perso, plus de soutenance ni de deadline de hackathon — développé pour le plaisir.**
 
 **État au 07/08 (fin de session) :** les 4 écarts critiques 🔴 sont réglés, Semgrep intégré,
 scan asynchrone, intégration Git complète (branche/commit/push/**fork**/PR cross-repo) testée
 de bout en bout sur des dépôts réels (y compris un dépôt externe non possédé), et le bonus IA
-est fait (Mistral). Reste uniquement les livrables non-code.
+est fait (Mistral).
 
 ---
 
@@ -97,19 +97,12 @@ l'esprit à celui de `export.html.twig`, a été ajouté.
 
 ---
 
-## 🟡 Livrables non-code manquants (vérifiés absents du repo)
+## 🟡 Documentation manquante (vérifiée absente du repo)
 
-Aucune trace dans le repo actuel de :
-- **Maquettes / wireframes** de l'interface (livrable #2)
-- **Diagrammes UML** — cas d'utilisation, classes, activité, séquence (livrable #3)
-- **Documentation technique** — installation, config des outils, architecture (livrable #8).
+- **Documentation technique** — installation, config des outils, architecture.
   Le `README.md` actuel ne décrit que les commandes Git/Docker/Symfony du quotidien : il ne
   dit nulle part ce qu'est SecureScan, comment les analyseurs fonctionnent, ni comment
   configurer les outils de sécurité tiers (Semgrep, TruffleHog, etc. une fois intégrés)
-- **Présentation PowerPoint** pour la soutenance (livrable #7)
-
-Ces 4 livrables comptent dans la grille technique/orale même s'ils ne sont pas "du code" —
-à ne pas laisser pour la dernière heure du jeudi.
 
 ---
 
