@@ -154,10 +154,15 @@ Réglé :
   part dans `src/`.
 - **Export CSV/JSON**, **tendances entre scans**, **partage d'équipe** (un projet = un seul
   owner actuellement) : non demandés par le sujet, à garder pour après le rendu.
-- **Tests unitaires** — ✅ démarré : les 10 analyseurs OWASP (A01-A010) et
-  `ProjectCloner::detectLanguage` sont couverts (74 tests, `tests/Service/`). Les patterns
-  regex se chevauchent parfois volontairement (ex. `setcookie()` déclenche à la fois
-  `no_httponly` et `no_secure`, `eval($_POST[...])` déclenche à la fois la règle spécifique
-  et la règle générique) — verrouillé par des tests dédiés plutôt que corrigé, pour ne pas
-  changer le comportement des analyseurs sans décision explicite. Restent à couvrir :
-  `FixApplierService`, `FixGeneratorService`, `GitFixWorkflowService`, `ChartService`.
+- **Tests unitaires** — ✅ démarré : les 10 analyseurs OWASP (A01-A010),
+  `ProjectCloner::detectLanguage` et `FixApplierService` sont couverts (86 tests,
+  `tests/Service/`). Les patterns regex se chevauchent parfois volontairement (ex.
+  `setcookie()` déclenche à la fois `no_httponly` et `no_secure`, `eval($_POST[...])`
+  déclenche à la fois la règle spécifique et la règle générique) — verrouillé par des
+  tests dédiés plutôt que corrigé, pour ne pas changer le comportement des analyseurs
+  sans décision explicite. Restent à couvrir : `FixGeneratorService`,
+  `GitFixWorkflowService`, `ChartService`.
+- **CI GitHub Actions** — ✅ fait : `.github/workflows/tests.yml` lance PHPUnit sur
+  push/PR vers `main`/`develop`. `composer install --no-scripts` pour éviter que les
+  auto-scripts Symfony (cache:clear...) tentent de se connecter à la base configurée
+  dans `.env` (inutile de toute façon : les tests sont unitaires purs, sans kernel).
