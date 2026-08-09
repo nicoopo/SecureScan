@@ -220,10 +220,13 @@ Réglé :
 
 Rien d'urgent, mais si l'envie de continuer sur les tests revient, par ordre de valeur :
 
-- **`ProjectVoter`** (`src/Security/Voter/`) — **le plus important des trois** :
-  c'est le seul rempart qui empêche un utilisateur de voir/modifier/scanner les
-  projets d'un autre. Actuellement zéro test dessus. Facile à tester (mock
-  `TokenInterface` + `User`/`Project`), gros gain de confiance pour peu d'effort.
+- **`ProjectVoter`** (`src/Security/Voter/`) — ✅ FAIT (`tests/Security/Voter/ProjectVoterTest.php`,
+  6 tests) : propriétaire autorisé sur les 4 attributs (VIEW/EDIT/DELETE/SCAN), non-propriétaire
+  refusé, token non authentifié (`getUser()` → null) refusé, `UserInterface` étranger (pas une
+  `App\Entity\User`) refusé, abstention sur sujet non supporté et sur attribut inconnu. Utilise
+  `createStub()` plutôt que `createMock()` pour le `TokenInterface` mocké (PHPUnit 13 émet une
+  notice — et `failOnNotice=true` dans `phpunit.dist.xml` — dès qu'un mock sans `expects()` n'est
+  pas déclaré comme simple stub).
 - **`Scan::computeScore()`** (`src/Entity/Scan.php`) — calcul du score/note (A-F)
   à partir des pénalités par sévérité. Logique pure, jamais testée directement
   (seulement traversée indirectement par `ScanOrchestratorTest`, sans assertion sur
