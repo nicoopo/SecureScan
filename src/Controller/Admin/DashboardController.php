@@ -31,22 +31,22 @@ class DashboardController extends AbstractDashboardController
             ->setTitle('SecureScan');
     }
 
-  public function configureMenuItems(): iterable
-{
-    yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
+    public function configureMenuItems(): iterable
+    {
+        yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
 
-    yield MenuItem::linkToRoute('Users', 'fas fa-users', 'admin_user_index');
+        yield MenuItem::linkToRoute('Users', 'fas fa-users', 'admin_user_index');
 
-    yield MenuItem::linkToRoute('Projects', 'fas fa-folder', 'admin_project_index');
+        yield MenuItem::linkToRoute('Projects', 'fas fa-folder', 'admin_project_index');
 
-    yield MenuItem::linkToRoute('Scans', 'fas fa-shield-alt', 'admin_scan_index');
+        yield MenuItem::linkToRoute('Scans', 'fas fa-shield-alt', 'admin_scan_index');
 
-    yield MenuItem::linkToRoute('Reports', 'fas fa-file-alt', 'admin_scan_report_index');
+        yield MenuItem::linkToRoute('Reports', 'fas fa-file-alt', 'admin_scan_report_index');
 
-    yield MenuItem::linkToRoute('Findings', 'fas fa-bug', 'admin_finding_index');
+        yield MenuItem::linkToRoute('Findings', 'fas fa-bug', 'admin_finding_index');
 
-    yield MenuItem::linkToRoute('Fixes', 'fas fa-tools', 'admin_fix_index');
-    yield MenuItem::section('');
-    yield MenuItem::linkToUrl('← Retour au site', 'fa fa-arrow-left', '/');
-}
+        yield MenuItem::linkToRoute('Fixes', 'fas fa-tools', 'admin_fix_index');
+        yield MenuItem::section('');
+        yield MenuItem::linkToUrl('← Retour au site', 'fa fa-arrow-left', '/');
+    }
 }
