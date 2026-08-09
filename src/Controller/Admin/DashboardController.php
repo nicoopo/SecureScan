@@ -46,5 +46,7 @@ class DashboardController extends AbstractDashboardController
     yield MenuItem::linkToRoute('Findings', 'fas fa-bug', 'admin_finding_index');
 
     yield MenuItem::linkToRoute('Fixes', 'fas fa-tools', 'admin_fix_index');
+    yield MenuItem::section('');
+    yield MenuItem::linkToUrl('← Retour au site', 'fa fa-arrow-left', '/');
 }
 }
