@@ -216,9 +216,9 @@ Réglé :
 
 ---
 
-## 🔵 Ce qu'il reste à tester (hors `src/Service/`, qui est fait à 100%)
+## 🔵 Tests unitaires hors `src/Service/` — ✅ FAIT à 100%
 
-Rien d'urgent, mais si l'envie de continuer sur les tests revient, par ordre de valeur :
+Les 4 items ci-dessous étaient la dernière poche de code testable en unitaire pur ; c'est fait :
 
 - **`ProjectVoter`** (`src/Security/Voter/`) — ✅ FAIT (`tests/Security/Voter/ProjectVoterTest.php`,
   6 tests) : propriétaire autorisé sur les 4 attributs (VIEW/EDIT/DELETE/SCAN), non-propriétaire
@@ -245,11 +245,14 @@ Rien d'urgent, mais si l'envie de continuer sur les tests revient, par ordre de 
   au tag OWASP 2025 même listé après un tag 2021, catégorie inconnue (hors A01-A10) ignorée avec
   repli sur le tag valide suivant. Seul le garde-fou "pas de sortie" de `analyze()` est testé via
   l'API publique (chemin de projet inexistant → `cd` échoue avant tout appel à `semgrep`).
-- **`RunScanMessageHandler`** — petit wrapper (repository → orchestrateur), rapide
-  à couvrir mais faible valeur (peu de logique propre).
+- **`RunScanMessageHandler`** — ✅ FAIT (`tests/MessageHandler/RunScanMessageHandlerTest.php`,
+  2 tests) : scan trouvé → `ScanOrchestrator::run()` appelé avec cette instance ; scan introuvable
+  (`find()` renvoie `null`) → l'orchestrateur n'est jamais appelé. `ScanRepository` et
+  `ScanOrchestrator` mockés avec `createMock` (pas de vraie DB/dépendances nécessaires).
 
-Hors scope pour des tests unitaires classiques (nécessiteraient des tests
-fonctionnels avec kernel Symfony — plus lourd, pas commencé) :
+Plus rien d'identifié à tester en unitaire pur. Hors scope pour des tests unitaires
+classiques (nécessiteraient des tests fonctionnels avec kernel Symfony — plus lourd,
+pas commencé) :
 - Les 7 **contrôleurs** (`src/Controller/`)
 - Les **repositories** Doctrine (`src/Repository/`) — s'appuient sur une vraie DB
 - Les **formulaires** (`src/Form/`)
