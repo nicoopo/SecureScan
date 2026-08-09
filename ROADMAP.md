@@ -227,10 +227,11 @@ Rien d'urgent, mais si l'envie de continuer sur les tests revient, par ordre de 
   `createStub()` plutôt que `createMock()` pour le `TokenInterface` mocké (PHPUnit 13 émet une
   notice — et `failOnNotice=true` dans `phpunit.dist.xml` — dès qu'un mock sans `expects()` n'est
   pas déclaré comme simple stub).
-- **`Scan::computeScore()`** (`src/Entity/Scan.php`) — calcul du score/note (A-F)
-  à partir des pénalités par sévérité. Logique pure, jamais testée directement
-  (seulement traversée indirectement par `ScanOrchestratorTest`, sans assertion sur
-  le score obtenu).
+- **`Scan::computeScore()`** (`src/Entity/Scan.php`) — ✅ FAIT (`tests/Entity/ScanTest.php`,
+  12 tests) : aucun finding → 100/A, chaque borne de note testée des deux côtés (89/90,
+  74/75, 59/60, 39/40) via un `DataProvider`, plancher à 0 quand les pénalités dépassent 100
+  (10 findings critiques), sévérité inconnue sans pénalité (branche `default` du `match`), et
+  `finish()` qui bascule bien le statut sur `done` + calcule le score au passage.
 - **`SemgrepAnalyzer`** (`src/Service/Analyzer/`) — seul analyseur jamais testé
   individuellement (utilisé uniquement mocké dans `ScanOrchestratorTest`). Sa
   logique propre — parsing du JSON `semgrep --config auto --json` et mapping vers
