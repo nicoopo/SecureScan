@@ -232,10 +232,19 @@ Rien d'urgent, mais si l'envie de continuer sur les tests revient, par ordre de 
   74/75, 59/60, 39/40) via un `DataProvider`, plancher à 0 quand les pénalités dépassent 100
   (10 findings critiques), sévérité inconnue sans pénalité (branche `default` du `match`), et
   `finish()` qui bascule bien le statut sur `done` + calcule le score au passage.
-- **`SemgrepAnalyzer`** (`src/Service/Analyzer/`) — seul analyseur jamais testé
-  individuellement (utilisé uniquement mocké dans `ScanOrchestratorTest`). Sa
-  logique propre — parsing du JSON `semgrep --config auto --json` et mapping vers
-  les catégories OWASP via `metadata.owasp` — n'est couverte par aucun test.
+- **`SemgrepAnalyzer`** (`src/Service/Analyzer/`) — ✅ FAIT (`tests/Service/Analyzer/SemgrepAnalyzerTest.php`,
+  19 tests). `analyze()` shell_exec un vrai binaire `semgrep`, potentiellement absent (ou lent)
+  de l'environnement de test — même réserve que pour `A03Analyzer` (composer/npm/pip-audit...).
+  La logique propre (parsing du JSON, mapping OWASP, mapping sévérité, lecture du snippet) est
+  donc testée directement via Reflection sur les méthodes privées (`buildFinding`, `mapSeverity`,
+  `extractOwaspCategory`), même approche que pour la logique de `GitHubPushService` atteignable
+  seulement après un vrai appel réseau. Couvre : mapping résultat→Finding, fallback du titre sur
+  `check_id` quand `message` est absent, troncature à 255 caractères (titre/ruleId), snippet vide
+  si fichier ou ligne introuvable, règle `impact=HIGH && likelihood=HIGH` → critique (prioritaire
+  sur le champ `severity`), mapping ERROR/WARNING/INFO/défaut → high/medium/low/medium, priorité
+  au tag OWASP 2025 même listé après un tag 2021, catégorie inconnue (hors A01-A10) ignorée avec
+  repli sur le tag valide suivant. Seul le garde-fou "pas de sortie" de `analyze()` est testé via
+  l'API publique (chemin de projet inexistant → `cd` échoue avant tout appel à `semgrep`).
 - **`RunScanMessageHandler`** — petit wrapper (repository → orchestrateur), rapide
   à couvrir mais faible valeur (peu de logique propre).
 
