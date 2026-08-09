@@ -50,3 +50,5 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToUrl('← Retour au site', 'fa fa-arrow-left', '/');
     }
 }
+
+
