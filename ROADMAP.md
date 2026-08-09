@@ -97,12 +97,20 @@ l'esprit à celui de `export.html.twig`, a été ajouté.
 
 ---
 
-## 🟡 Documentation manquante (vérifiée absente du repo)
+## 🟡 Documentation — ✅ FAIT
 
-- **Documentation technique** — installation, config des outils, architecture.
-  Le `README.md` actuel ne décrit que les commandes Git/Docker/Symfony du quotidien : il ne
-  dit nulle part ce qu'est SecureScan, comment les analyseurs fonctionnent, ni comment
-  configurer les outils de sécurité tiers (Semgrep, TruffleHog, etc. une fois intégrés)
+- **Documentation technique** — `README.md` complété avec : présentation du principe de
+  bout en bout (soumission → clonage → scan async → analyse → score/rapport → corrections →
+  intégration Git), tableau d'architecture (services/contrôleurs/conteneurs Docker), tableau
+  des outils de sécurité réellement orchestrés (avec leur tag `Finding::tool`), configuration
+  des clés API optionnelles (`MISTRAL_API_KEY`, `GITHUB_TOKEN`) et section tests.
+  Au passage, deux inexactitudes corrigées dans le README existant : l'URL de l'app en dev
+  était documentée `http://localhost` alors que `compose.yaml` mappe nginx sur `8080:80`
+  (donc `http://localhost:8080`) ; et deux limitations honnêtement documentées plutôt que
+  passées sous silence — `govulncheck`/`bundler-audit` sont appelés par `A03Analyzer` mais
+  **pas installés** dans l'image Docker par défaut (échouent silencieusement, aucun finding
+  Go/Ruby), et **TruffleHog** est installé dans l'image (et son tag existe dans `Finding`)
+  mais n'est encore branché à aucun analyseur.
 
 ---
 
