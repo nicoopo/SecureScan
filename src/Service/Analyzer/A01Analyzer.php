@@ -14,7 +14,7 @@ class A01Analyzer
     private const TOOL = 'securescan';
 
     /** Extensions de fichiers inspectées */
-    private const EXTENSIONS = ['php', 'yaml', 'yml', 'json', 'js', 'ts'];
+    private const EXTENSIONS = ['php', 'yaml', 'yml', 'json', 'js', 'ts', 'py', 'java', 'go', 'rb'];
 
     /**
      * Patterns détectés — chaque entrée décrit une règle statique.
@@ -23,11 +23,11 @@ class A01Analyzer
     private const PATTERNS = [
         [
             'id'          => 'a01.cors.wildcard_header',
-            'regex'       => '/Access-Control-Allow-Origin[\'"\s:]+\*/i',
+            'regex'       => '/Access-Control-Allow-Origin[\'"\s:\]=\[]+\*/i',
             'title'       => 'CORS wildcard trop permissif',
             'description' => "Le header Access-Control-Allow-Origin est défini à * ce qui autorise n'importe quelle origine à accéder aux ressources. Restreindre aux domaines de confiance explicitement listés.",
             'severity'    => Finding::SEVERITY_HIGH,
-            'extensions'  => ['php', 'js', 'ts', 'yaml', 'yml'],
+            'extensions'  => ['php', 'js', 'ts', 'yaml', 'yml', 'py', 'java', 'go', 'rb'],
         ],
         [
             'id'          => 'a01.cors.allow_all_origins_config',
@@ -35,7 +35,7 @@ class A01Analyzer
             'title'       => 'Configuration CORS — toutes origines autorisées',
             'description' => "La configuration CORS autorise toutes les origines (*). Définir une liste blanche explicite des domaines autorisés plutôt qu'un wildcard.",
             'severity'    => Finding::SEVERITY_HIGH,
-            'extensions'  => ['php', 'yaml', 'yml', 'json'],
+            'extensions'  => ['php', 'yaml', 'yml', 'json', 'py', 'java', 'rb'],
         ],
         [
             'id'          => 'a01.idor.raw_superglobal_in_query',
@@ -67,7 +67,7 @@ class A01Analyzer
             'title'       => 'Contournement de vérification admin hardcodé',
             'description' => "Une condition toujours vraie (if(true) ou if(1)) précède un bloc lié à une vérification de rôle admin. Ce pattern indique un bypass de sécurité potentiellement oublié.",
             'severity'    => Finding::SEVERITY_CRITICAL,
-            'extensions'  => ['php'],
+            'extensions'  => ['php', 'java', 'go'],
         ],
     ];
 

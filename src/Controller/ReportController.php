@@ -2,9 +2,14 @@
 
 namespace App\Controller;
 
+use App\Entity\Fix;
 use App\Entity\Scan;
 use App\Repository\ScanRepository;
+use App\Service\MistralFixService;
 use App\Service\ChartService;
+use App\Service\FixApplierService;
+use App\Service\GitFixWorkflowService;
+use App\Service\GitHubPushService;
 use App\Service\ReportGeneratorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,6 +18,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Security\Csrf\CsrfToken;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 final class ReportController extends AbstractController
 {
@@ -109,5 +116,106 @@ final class ReportController extends AbstractController
         return $this->json(['url' => $this->generateUrl('report_public', [
             'token' => $scan->getShareToken()
         ], UrlGeneratorInterface::ABSOLUTE_URL)]);
+    }
+
+    #[Route('/report/fix/{id}/accept', name: 'fix_accept', methods: ['POST'])]
+    public function acceptFix(Fix $fix, Request $request, CsrfTokenManagerInterface $csrfTokenManager, FixApplierService $fixApplier, GitFixWorkflowService $gitWorkflow, EntityManagerInterface $em): JsonResponse
+    {
+        $this->assertFixOwner($fix);
+        $this->assertValidCsrf($request, $csrfTokenManager);
+
+        $fix->accept();
+        $em->flush();
+
+        $result = $fixApplier->apply($fix);
+        $scan   = $fix->getFinding()?->getScan();
+        $fixBranch = null;
+
+        if ($result['applied'] && $scan) {
+            $fixBranch = $gitWorkflow->ensureFixBranch($scan);
+            $gitWorkflow->commitFix(
+                $scan,
+                $fix->getFilePath(),
+                sprintf('[SecureScan] %s : %s', $fix->getFinding()->getOwaspCategory(), $fix->getFinding()->getTitle())
+            );
+            $em->flush();
+        }
+
+        return $this->json([
+            'status'    => $fix->getStatus(),
+            'applied'   => $result['applied'],
+            'message'   => $result['message'],
+            'fixBranch' => $fixBranch,
+        ]);
+    }
+
+    #[Route('/report/{id}/push-fixes', name: 'report_push_fixes', methods: ['POST'])]
+    public function pushFixes(Scan $scan, Request $request, CsrfTokenManagerInterface $csrfTokenManager, GitHubPushService $gitHubPush): JsonResponse
+    {
+        if ($scan->getProject()->getOwner() !== $this->getUser()) {
+            throw $this->createAccessDeniedException();
+        }
+        $this->assertValidCsrf($request, $csrfTokenManager, 'push_fixes');
+
+        return $this->json($gitHubPush->push($scan));
+    }
+
+    #[Route('/report/fix/{id}/generate-ai', name: 'fix_generate_ai', methods: ['POST'])]
+    public function generateAiFix(Fix $fix, Request $request, CsrfTokenManagerInterface $csrfTokenManager, MistralFixService $mistralFix, EntityManagerInterface $em): JsonResponse
+    {
+        $this->assertFixOwner($fix);
+        $this->assertValidCsrf($request, $csrfTokenManager);
+
+        if (!$fix->isPending()) {
+            return $this->json(['success' => false, 'message' => 'Ce fix a déjà été traité.'], 409);
+        }
+
+        $result = $mistralFix->generate($fix->getFinding());
+        if ($result === null) {
+            return $this->json([
+                'success' => false,
+                'message' => "Génération IA indisponible (clé API absente, requête refusée, ou erreur).",
+            ]);
+        }
+
+        $fix->setType(Fix::TYPE_AI)
+            ->setProposedCode($result['proposedCode'])
+            ->setExplanation($result['explanation']);
+        $em->flush();
+
+        return $this->json([
+            'success'      => true,
+            'type'         => $fix->getType(),
+            'proposedCode' => $fix->getProposedCode(),
+            'explanation'  => $fix->getExplanation(),
+        ]);
+    }
+
+    #[Route('/report/fix/{id}/reject', name: 'fix_reject', methods: ['POST'])]
+    public function rejectFix(Fix $fix, Request $request, CsrfTokenManagerInterface $csrfTokenManager, EntityManagerInterface $em): JsonResponse
+    {
+        $this->assertFixOwner($fix);
+        $this->assertValidCsrf($request, $csrfTokenManager);
+
+        $fix->reject();
+        $em->flush();
+
+        return $this->json(['status' => $fix->getStatus()]);
+    }
+
+    private function assertFixOwner(Fix $fix): void
+    {
+        $owner = $fix->getFinding()?->getScan()?->getProject()?->getOwner();
+        if ($owner !== $this->getUser()) {
+            throw $this->createAccessDeniedException();
+        }
+    }
+
+    private function assertValidCsrf(Request $request, CsrfTokenManagerInterface $csrfTokenManager, string $tokenId = 'fix_action'): void
+    {
+        $token = $request->headers->get('X-CSRF-Token', '');
+        if (!$csrfTokenManager->isTokenValid(new CsrfToken($tokenId, $token))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
     }
 }

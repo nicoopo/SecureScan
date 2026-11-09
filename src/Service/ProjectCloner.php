@@ -38,4 +38,27 @@ class ProjectCloner{
 
         return $dest;
     }
+
+    /** Détecte le langage principal d'un projet cloné à partir de ses fichiers de manifeste racine. */
+    public function detectLanguage(string $projectPath): string
+    {
+        $markers = [
+            'composer.json'    => Project::LANGUAGE_PHP,
+            'package.json'     => Project::LANGUAGE_JAVASCRIPT,
+            'requirements.txt' => Project::LANGUAGE_PYTHON,
+            'pyproject.toml'   => Project::LANGUAGE_PYTHON,
+            'go.mod'           => Project::LANGUAGE_GO,
+            'Gemfile'          => Project::LANGUAGE_RUBY,
+            'pom.xml'          => Project::LANGUAGE_JAVA,
+            'build.gradle'     => Project::LANGUAGE_JAVA,
+        ];
+
+        foreach ($markers as $file => $language) {
+            if (file_exists($projectPath . '/' . $file)) {
+                return $language;
+            }
+        }
+
+        return Project::LANGUAGE_UNKNOWN;
+    }
 }

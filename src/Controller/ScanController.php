@@ -4,17 +4,18 @@ namespace App\Controller;
 use App\Entity\Project;
 use App\Entity\Scan;
 use App\Form\ProjectType;
+use App\Message\RunScanMessage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Service\ScanOrchestrator;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class ScanController extends AbstractController
 {
     #[Route('/scan/new', name: 'app_scan_new')]
-    public function new(Request $request, EntityManagerInterface $em, ScanOrchestrator $scanOrchestrator): Response
+    public function new(Request $request, EntityManagerInterface $em, MessageBusInterface $bus): Response
     {
         $project = new Project();
         $form = $this->createForm(ProjectType::class, $project);
@@ -33,7 +34,7 @@ final class ScanController extends AbstractController
             $em->persist($project);
             $em->persist($scan);
             $em->flush();
-            $scanOrchestrator->run($scan);
+            $bus->dispatch(new RunScanMessage($scan->getId()));
             return $this->redirectToRoute('app_scan_detail', ['id' => $scan->getId()]);
         }
         return $this->render('scan/new.html.twig', [

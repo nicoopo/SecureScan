@@ -23,6 +23,8 @@
         .summary-grid { display: table; width: 100%; margin-bottom: 16px; }
         .summary-cell { display: table-cell; width: 25%; text-align: center; padding: 10px; border: 1px solid #e5e7eb; }
         .summary-num { font-size: 22px; font-weight: bold; }
+        .applied { background: #dcfce7; color: #166534; }
+        th.applied-th { background: #16a34a; }
     </style>
 </head>
 <body>
@@ -88,9 +90,32 @@
     </table>
 {% endif %}
 
-{% if scan.fixBranch %}
-    <h2>Corrections appliquées</h2>
-    <p>Branche Git créée : <strong>{{ scan.fixBranch }}</strong></p>
+{% set acceptedFindings = scan.findings|filter(f => f.acceptedFix is not null) %}
+{% if acceptedFindings|length > 0 %}
+    <h2>Corrections appliquées ({{ acceptedFindings|length }})</h2>
+    {% if scan.fixBranch %}
+        <p>Branche Git créée : <strong>{{ scan.fixBranch }}</strong></p>
+    {% endif %}
+    <table>
+        <thead>
+        <tr>
+            <th class="applied-th" style="width:30%">Fichier</th>
+            <th class="applied-th" style="width:45%">Vulnérabilité</th>
+            <th class="applied-th" style="width:15%">OWASP</th>
+            <th class="applied-th" style="width:10%">Statut</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for finding in acceptedFindings %}
+            <tr>
+                <td style="font-family: monospace">{{ finding.filePath }}</td>
+                <td>{{ finding.title }}</td>
+                <td>{{ finding.owaspCategory }}</td>
+                <td><span class="badge applied">Appliqué</span></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
 {% endif %}
 
 </body>

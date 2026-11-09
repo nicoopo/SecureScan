@@ -13,6 +13,8 @@ use App\Service\Analyzer\A07Analyzer;
 use App\Service\Analyzer\A08Analyzer;
 use App\Service\Analyzer\A09Analyzer;
 use App\Service\Analyzer\A010Analyzer;
+use App\Service\Analyzer\SemgrepAnalyzer;
+use App\Service\FixGeneratorService;
 use App\Service\ProjectCloner;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -30,7 +32,9 @@ class ScanOrchestrator
         private readonly A08Analyzer $a08Analyzer,
         private readonly A09Analyzer $a09Analyzer,
         private readonly A010Analyzer  $a010Analyzer,
+        private readonly SemgrepAnalyzer $semgrepAnalyzer,
         private readonly ProjectCloner $cloner,
+        private readonly FixGeneratorService $fixGenerator,
         private readonly EntityManagerInterface $em,
         private readonly LoggerInterface        $logger,
     ) {}
@@ -57,6 +61,8 @@ class ScanOrchestrator
             return;
         }
 
+        $scan->getProject()->setLanguage($this->cloner->detectLanguage($projectPath));
+
         $scan->setStatus(Scan::STATUS_RUNNING);
         $this->em->flush();
 
@@ -72,11 +78,15 @@ class ScanOrchestrator
                 ...$this->a08Analyzer->analyze($scan, $projectPath),
                 ...$this->a09Analyzer->analyze($scan, $projectPath),
                 ...$this->a010Analyzer->analyze($scan, $projectPath),
+                ...$this->semgrepAnalyzer->analyze($scan, $projectPath),
             ];
 
             foreach ($findings as $finding) {
                 $scan->addFinding($finding);
                 $this->em->persist($finding);
+
+                $fix = $this->fixGenerator->generate($finding);
+                $this->em->persist($fix);
             }
 
             $scan->finish();

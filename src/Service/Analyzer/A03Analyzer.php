@@ -6,7 +6,7 @@ use App\Entity\Scan;
 
 class A03Analyzer
 {
-    private const TOOL = 'securescan';
+    private const TOOL = Finding::TOOL_SECURESCAN;
 
     private const VULNERABLE_PACKAGES = [
         'phpmailer/phpmailer' => [
@@ -35,6 +35,10 @@ class A03Analyzer
 
         $findings = array_merge($findings, $this->analyzeComposer($scan, $projectPath));
         $findings = array_merge($findings, $this->analyzeNpm($scan, $projectPath));
+        $findings = array_merge($findings, $this->analyzePip($scan, $projectPath));
+        $findings = array_merge($findings, $this->analyzeGoMod($scan, $projectPath));
+        $findings = array_merge($findings, $this->analyzeGemfile($scan, $projectPath));
+        $findings = array_merge($findings, $this->analyzeMaven($scan, $projectPath));
 
         return $findings;
     }
@@ -70,8 +74,8 @@ class A03Analyzer
             }
         }
 
-        // Composer audit
-        $output = shell_exec("cd " . escapeshellarg($projectPath) . " && composer audit --format=json 2>/dev/null");
+        // Composer audit (--locked : audite composer.lock directement, sans nécessiter `composer install`)
+        $output = shell_exec("cd " . escapeshellarg($projectPath) . " && composer audit --locked --format=json 2>/dev/null");
         if ($output) {
             $audit = json_decode($output, true);
             $advisories = $audit['advisories'] ?? [];
@@ -84,7 +88,8 @@ class A03Analyzer
                         ($advisory['title'] ?? '') . ' — ' . ($advisory['link'] ?? ''),
                         Finding::SEVERITY_HIGH,
                         'composer.json',
-                        1
+                        1,
+                        Finding::TOOL_COMPOSER_AUDIT
                     );
                 }
             }
@@ -135,7 +140,8 @@ class A03Analyzer
                     "Sévérité : " . ($vuln['severity'] ?? '?') . ". " . ($vuln['url'] ?? ''),
                     $severity,
                     'package.json',
-                    1
+                    1,
+                    Finding::TOOL_NPM_AUDIT
                 );
             }
         }
@@ -143,12 +149,169 @@ class A03Analyzer
         return $findings;
     }
 
-    private function buildFinding(Scan $scan, string $ruleId, string $title, string $description, string $severity, string $filePath, int $line): Finding
+    private function analyzePip(Scan $scan, string $projectPath): array
+    {
+        $findings = [];
+        $path = $projectPath . '/requirements.txt';
+
+        if (!file_exists($path)) return [];
+
+        $lines = file($path, FILE_IGNORE_NEW_LINES) ?: [];
+        foreach ($lines as $index => $line) {
+            $trimmed = trim($line);
+            if ($trimmed === '' || str_starts_with($trimmed, '#')) continue;
+            if (!preg_match('/^[A-Za-z0-9_.\-\[\]]+==/', $trimmed)) {
+                $findings[] = $this->buildFinding(
+                    $scan, 'a03.supply.unfixed_version_pip',
+                    "Dépendance Python sans version fixée : {$trimmed}",
+                    "La dépendance \"{$trimmed}\" n'est pas fixée avec ==. Fixer une version précise pour des builds reproductibles.",
+                    Finding::SEVERITY_MEDIUM, 'requirements.txt', $index + 1
+                );
+            }
+        }
+
+        // pip-audit (si installé)
+        $output = shell_exec("cd " . escapeshellarg($projectPath) . " && pip-audit -r requirements.txt --format=json 2>/dev/null");
+        if ($output) {
+            $audit = json_decode($output, true);
+            $deps = $audit['dependencies'] ?? $audit ?? [];
+            foreach ($deps as $dep) {
+                foreach ($dep['vulns'] ?? [] as $vuln) {
+                    $findings[] = $this->buildFinding(
+                        $scan,
+                        'a03.supply.pip_audit.' . ($vuln['id'] ?? 'unknown'),
+                        "[pip-audit] " . ($dep['name'] ?? '?') . " : " . ($vuln['id'] ?? 'Vulnérabilité connue'),
+                        implode(' ', $vuln['description'] ?? []) ?: 'Voir pip-audit pour les détails.',
+                        Finding::SEVERITY_HIGH,
+                        'requirements.txt',
+                        1,
+                        Finding::TOOL_PIP_AUDIT
+                    );
+                }
+            }
+        }
+
+        return $findings;
+    }
+
+    private function analyzeGoMod(Scan $scan, string $projectPath): array
+    {
+        $findings = [];
+        $modPath = $projectPath . '/go.mod';
+
+        if (!file_exists($modPath)) return [];
+
+        if (!file_exists($projectPath . '/go.sum')) {
+            $findings[] = $this->buildFinding(
+                $scan, 'a03.supply.go_missing_sum',
+                'go.sum absent — checksums des dépendances non vérifiables',
+                'Le module Go possède un go.mod mais pas de go.sum. Sans go.sum, les checksums des dépendances ne peuvent pas être vérifiés à l\'installation. Committer go.sum dans le dépôt.',
+                Finding::SEVERITY_MEDIUM, 'go.mod', 1
+            );
+        }
+
+        // govulncheck (si installé)
+        $output = shell_exec("cd " . escapeshellarg($projectPath) . " && govulncheck -json ./... 2>/dev/null");
+        if ($output) {
+            foreach (explode("\n", trim($output)) as $line) {
+                $entry = json_decode($line, true);
+                $osv = $entry['osv'] ?? null;
+                if ($osv) {
+                    $findings[] = $this->buildFinding(
+                        $scan,
+                        'a03.supply.govulncheck.' . ($osv['id'] ?? 'unknown'),
+                        "[govulncheck] " . ($osv['id'] ?? 'Vulnérabilité connue'),
+                        $osv['summary'] ?? '',
+                        Finding::SEVERITY_HIGH,
+                        'go.mod',
+                        1,
+                        Finding::TOOL_GOVULNCHECK
+                    );
+                }
+            }
+        }
+
+        return $findings;
+    }
+
+    private function analyzeGemfile(Scan $scan, string $projectPath): array
+    {
+        $findings = [];
+        $gemfilePath = $projectPath . '/Gemfile';
+
+        if (!file_exists($gemfilePath)) return [];
+
+        if (!file_exists($projectPath . '/Gemfile.lock')) {
+            $findings[] = $this->buildFinding(
+                $scan, 'a03.supply.missing_gemfile_lock',
+                'Gemfile.lock absent — versions des gems non verrouillées',
+                'Un Gemfile existe sans Gemfile.lock. Sans lock file, les versions installées peuvent varier entre environnements. Générer et committer Gemfile.lock.',
+                Finding::SEVERITY_MEDIUM, 'Gemfile', 1
+            );
+        }
+
+        $lines = file($gemfilePath, FILE_IGNORE_NEW_LINES) ?: [];
+        foreach ($lines as $index => $line) {
+            if (preg_match('/^\s*gem\s+[\'"]([^\'"]+)[\'"]\s*$/', $line, $matches)) {
+                $findings[] = $this->buildFinding(
+                    $scan, 'a03.supply.unfixed_version_gem',
+                    "Dépendance Ruby sans version fixée : {$matches[1]}",
+                    "La gem \"{$matches[1]}\" est déclarée sans contrainte de version. Fixer une version précise (ex: gem '{$matches[1]}', '~> 1.2').",
+                    Finding::SEVERITY_MEDIUM, 'Gemfile', $index + 1
+                );
+            }
+        }
+
+        // bundler-audit (si installé)
+        $output = shell_exec("cd " . escapeshellarg($projectPath) . " && bundler-audit check --format json 2>/dev/null");
+        if ($output) {
+            $audit = json_decode($output, true);
+            foreach ($audit['results'] ?? [] as $result) {
+                $advisory = $result['advisory'] ?? [];
+                $findings[] = $this->buildFinding(
+                    $scan,
+                    'a03.supply.bundler_audit.' . ($advisory['id'] ?? 'unknown'),
+                    "[bundler-audit] " . ($advisory['title'] ?? 'Vulnérabilité connue'),
+                    $advisory['description'] ?? '',
+                    Finding::SEVERITY_HIGH,
+                    'Gemfile.lock',
+                    1,
+                    Finding::TOOL_BUNDLER_AUDIT
+                );
+            }
+        }
+
+        return $findings;
+    }
+
+    private function analyzeMaven(Scan $scan, string $projectPath): array
+    {
+        $findings = [];
+        $pomPath = $projectPath . '/pom.xml';
+
+        if (!file_exists($pomPath)) return [];
+
+        $lines = file($pomPath, FILE_IGNORE_NEW_LINES) ?: [];
+        foreach ($lines as $index => $line) {
+            if (preg_match('/<version>\s*(LATEST|RELEASE)\s*<\/version>/i', $line, $matches)) {
+                $findings[] = $this->buildFinding(
+                    $scan, 'a03.supply.unfixed_version_maven',
+                    "Dépendance Maven sans version fixée ({$matches[1]})",
+                    "Une dépendance utilise le mot-clé {$matches[1]} au lieu d'une version fixe. Ce comportement est déprécié dans Maven et rend les builds non reproductibles. Fixer une version précise.",
+                    Finding::SEVERITY_MEDIUM, 'pom.xml', $index + 1
+                );
+            }
+        }
+
+        return $findings;
+    }
+
+    private function buildFinding(Scan $scan, string $ruleId, string $title, string $description, string $severity, string $filePath, int $line, string $tool = self::TOOL): Finding
     {
         $finding = new Finding();
         $finding
             ->setScan($scan)
-            ->setTool(self::TOOL)
+            ->setTool($tool)
             ->setSeverity($severity)
             ->setOwaspCategory(Finding::OWASP_A03)
             ->setRuleId($ruleId)

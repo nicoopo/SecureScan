@@ -15,7 +15,7 @@ class A09Analyzer
     private const TOOL = 'securescan';
 
     /** Extensions de fichiers inspectées */
-    private const EXTENSIONS = ['php', 'js', 'ts'];
+    private const EXTENSIONS = ['php', 'js', 'ts', 'java', 'py', 'rb'];
 
     /**
      * Patterns détectés — chaque entrée décrit une règle statique.
@@ -28,7 +28,7 @@ class A09Analyzer
             'title'       => 'Bloc catch vide — exception silencieuse',
             'description' => "Un bloc catch vide avale l'exception sans la logger ni la traiter. En cas d'erreur, aucune trace n'est conservée, ce qui rend le diagnostic impossible. Logger l'exception au minimum avec un niveau error ou warning.",
             'severity'    => Finding::SEVERITY_MEDIUM,
-            'extensions'  => ['php', 'js', 'ts'],
+            'extensions'  => ['php', 'js', 'ts', 'java'],
         ],
         [
             'id'          => 'a09.logging.catch_no_log',
@@ -36,7 +36,25 @@ class A09Analyzer
             'title'       => 'Exception capturée avec TODO sans logging',
             'description' => "Un bloc catch contient uniquement un commentaire TODO, sans logging ni traitement réel de l'erreur. Implémenter le logging immédiatement plutôt que de reporter.",
             'severity'    => Finding::SEVERITY_LOW,
-            'extensions'  => ['php', 'js', 'ts'],
+            'extensions'  => ['php', 'js', 'ts', 'java'],
+        ],
+        [
+            'id'          => 'a09.logging.empty_except.python',
+            'regex'       => '/except[^:\n]*:\s*\n\s*pass\b/i',
+            'title'       => 'Bloc except vide — exception silencieuse',
+            'description' => "Un bloc except vide (pass) avale l'exception sans la logger ni la traiter. Logger l'exception au minimum avec logging.exception() ou logging.error().",
+            'severity'    => Finding::SEVERITY_MEDIUM,
+            'extensions'  => ['py'],
+            'multiline'   => true,
+        ],
+        [
+            'id'          => 'a09.logging.empty_rescue.ruby',
+            'regex'       => '/rescue[^\n]*\n\s*end\b/i',
+            'title'       => 'Bloc rescue vide — exception silencieuse',
+            'description' => "Un bloc rescue vide avale l'exception sans la logger ni la traiter. Logger l'exception au minimum (logger.error(e.message)).",
+            'severity'    => Finding::SEVERITY_MEDIUM,
+            'extensions'  => ['rb'],
+            'multiline'   => true,
         ],
         [
             'id'          => 'a09.logging.error_reporting_disabled',
@@ -100,15 +118,17 @@ class A09Analyzer
 
                 // Pattern multi-ligne : chercher dans le contenu complet
                 if (isset($pattern['multiline']) && $pattern['multiline']) {
-                    if (preg_match($pattern['regex'], $content, $matches, PREG_OFFSET_CAPTURE)) {
-                        $lineNum = substr_count(substr($content, 0, $matches[0][1]), "\n") + 1;
-                        $findings[] = $this->buildFinding(
-                            $scan,
-                            $pattern,
-                            $relative,
-                            $lineNum,
-                            trim($lines[$lineNum - 1] ?? '')
-                        );
+                    if (preg_match_all($pattern['regex'], $content, $allMatches, PREG_OFFSET_CAPTURE)) {
+                        foreach ($allMatches[0] as $match) {
+                            $lineNum = substr_count(substr($content, 0, $match[1]), "\n") + 1;
+                            $findings[] = $this->buildFinding(
+                                $scan,
+                                $pattern,
+                                $relative,
+                                $lineNum,
+                                trim($lines[$lineNum - 1] ?? '')
+                            );
+                        }
                     }
                     continue;
                 }

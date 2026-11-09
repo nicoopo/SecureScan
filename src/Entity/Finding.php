@@ -21,11 +21,16 @@ class Finding
     public const SEVERITY_LOW      = 'low';
 
     // Outils sources
-    public const TOOL_SEMGREP     = 'semgrep';
-    public const TOOL_NPM_AUDIT   = 'npm_audit';
-    public const TOOL_TRUFFLEHOG  = 'trufflehog';
-    public const TOOL_ESLINT      = 'eslint';
-    public const TOOL_PHPSTAN     = 'phpstan';
+    public const TOOL_SEMGREP        = 'semgrep';
+    public const TOOL_NPM_AUDIT      = 'npm_audit';
+    public const TOOL_COMPOSER_AUDIT = 'composer_audit';
+    public const TOOL_PIP_AUDIT      = 'pip_audit';
+    public const TOOL_GOVULNCHECK    = 'govulncheck';
+    public const TOOL_BUNDLER_AUDIT  = 'bundler_audit';
+    public const TOOL_TRUFFLEHOG     = 'trufflehog';
+    public const TOOL_ESLINT         = 'eslint';
+    public const TOOL_PHPSTAN        = 'phpstan';
+    public const TOOL_SECURESCAN     = 'securescan';
 
     // Catégories OWASP Top 10 : 2025
     public const OWASP_A01 = 'A01';
@@ -140,12 +145,17 @@ class Finding
 
     public function hasPendingFix(): bool
     {
+        return $this->getPendingFix() !== null;
+    }
+
+    public function getPendingFix(): ?Fix
+    {
         foreach ($this->fixes as $fix) {
             if ($fix->getStatus() === Fix::STATUS_PENDING) {
-                return true;
+                return $fix;
             }
         }
-        return false;
+        return null;
     }
 
     // -------------------------------------------------------------------------
