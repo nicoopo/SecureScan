@@ -73,6 +73,47 @@ class ProjectClonerTest extends TestCase
         $this->assertSame(Project::LANGUAGE_UNKNOWN, $this->cloner->detectLanguage($dir));
     }
 
+    #[DataProvider('unsafeRepositoryUrlProvider')]
+    public function testRefusesNonHttpsRepositoryUrls(string $url): void
+    {
+        $workDir = sys_get_temp_dir() . '/securescan_test_' . bin2hex(random_bytes(8));
+        $source  = sys_get_temp_dir() . '/securescan_src_' . bin2hex(random_bytes(8));
+        mkdir($source, 0777, true);
+        exec('git init -q ' . escapeshellarg($source));
+        $project = (new Project())->setSource(Project::SOURCE_GIT)->setRepositoryUrl(str_replace('{src}', $source, $url));
+
+        try {
+            $this->expectException(\RuntimeException::class);
+            (new ProjectCloner($workDir))->clone($project);
+        } finally {
+            $this->removeDir($workDir);
+            $this->removeDir($source);
+        }
+    }
+
+    public static function unsafeRepositoryUrlProvider(): array
+    {
+        return [
+            'chemin local'       => ['{src}'],
+            'file://'            => ['file://{src}'],
+            'option git injectée' => ['--upload-pack=touch /tmp/pwned'],
+            'ext::'              => ['ext::sh -c touch% /tmp/pwned'],
+        ];
+    }
+
+    private function removeDir(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::CHILD_FIRST);
+        foreach ($it as $f) {
+            @chmod($f->getPathname(), 0777);
+            $f->isDir() ? rmdir($f->getPathname()) : unlink($f->getPathname());
+        }
+        rmdir($dir);
+    }
+
     private function createProjectWithFile(string $markerFile): string
     {
         $dir = sys_get_temp_dir() . '/securescan_test_' . bin2hex(random_bytes(8));
