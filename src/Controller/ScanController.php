@@ -5,6 +5,7 @@ use App\Entity\Project;
 use App\Entity\Scan;
 use App\Form\ProjectType;
 use App\Message\RunScanMessage;
+use App\Security\Voter\ProjectVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -63,6 +64,7 @@ final class ScanController extends AbstractController
         if (!$scan) {
             throw $this->createNotFoundException('Scan introuvable');
         }
+        $this->denyAccessUnlessGranted(ProjectVoter::VIEW, $scan->getProject());
 
         return $this->render('scan/detail.html.twig', [
             'scan' => $scan,
