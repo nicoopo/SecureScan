@@ -9,6 +9,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\File;
+use Symfony\Component\Validator\Constraints\Url;
 
 class ProjectType extends AbstractType
 {
@@ -28,6 +29,9 @@ class ProjectType extends AbstractType
             ->add('repositoryUrl', TextType::class, [
                 'label' => 'URL du repository Git',
                 'required' => false,
+                'constraints' => [
+                    new Url(protocols: ['https'], requireTld: true, message: 'L\'URL doit être une adresse https valide (ex. https://github.com/owner/repo).'),
+                ],
             ])
             ->add('zipFile', FileType::class, [
                 'label' => 'Archive ZIP',

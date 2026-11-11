@@ -2,6 +2,7 @@
 namespace App\Service;
 
 use App\Entity\Project;
+use Symfony\Component\Process\Process;
 
 class ProjectCloner{
     private string $workDir;
@@ -15,12 +16,16 @@ class ProjectCloner{
         @mkdir($dest, 0755, true);
 
         if ($project->getSource() === Project::SOURCE_GIT) {
-            $url = escapeshellarg($project->getRepositoryUrl());
-            $destArg = escapeshellarg($dest);
-            exec("git clone --depth=1 {$url} {$destArg} 2>&1", $output, $code);
+            // Seul https est autorisé (pas de file://, chemin local, ssh, ext::) ; « -- » empêche une URL commençant par « - » d'être lue comme une option.
+            $process = new Process([
+                'git', '-c', 'protocol.allow=never', '-c', 'protocol.https.allow=always',
+                'clone', '--depth=1', '--', (string) $project->getRepositoryUrl(), $dest,
+            ]);
+            $process->setTimeout(300);
+            $process->run();
 
-            if ($code !== 0) {
-                throw new \RuntimeException('Échec du clonage Git : ' . implode("\n", $output));
+            if (!$process->isSuccessful()) {
+                throw new \RuntimeException('Échec du clonage Git : ' . $process->getErrorOutput() . $process->getOutput());
             }
         } else {
             $zipPath = $project->getZipPath();
