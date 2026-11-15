@@ -29,6 +29,15 @@ class UserFixtures extends Fixture implements FixtureGroupInterface
         $user->setIsVerified(true);
         $user->setGitUsername('demo-user');
         $manager->persist($user);
+
+        $admin = new User();
+        $admin->setEmail('admin@securescan.fr');
+        $admin->setFullName('Admin');
+        $admin->setRoles(['ROLE_ADMIN']);
+        $admin->setPassword($this->hasher->hashPassword($admin, 'password'));
+        $admin->setIsVerified(true);
+        $manager->persist($admin);
+
         $manager->flush();
 
         $this->addReference(self::USER_DEMO_REF, $user);
