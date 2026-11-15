@@ -19,10 +19,10 @@ final class ScanController extends AbstractController
     public function new(Request $request, EntityManagerInterface $em, MessageBusInterface $bus): Response
     {
         $project = new Project();
+        $project->setOwner($this->getUser()); // avant isValid() : owner est NotNull
         $form = $this->createForm(ProjectType::class, $project);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
-            $project->setOwner($this->getUser());
             $zipFile = $form->get('zipFile')->getData();
             if ($zipFile) {
                 $project->setSource(Project::SOURCE_ZIP);
