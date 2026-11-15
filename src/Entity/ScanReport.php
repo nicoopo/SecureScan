@@ -5,8 +5,11 @@ namespace App\Entity;
 use App\Repository\ScanReportRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ScanReportRepository::class)]
+#[UniqueEntity(fields: ['scan'], message: 'Ce scan a déjà un rapport.')]
 class ScanReport
 {
     public const FORMAT_HTML = 'html';
@@ -19,6 +22,7 @@ class ScanReport
 
     #[ORM\OneToOne(inversedBy: 'report')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[Assert\NotNull(message: 'Ce champ est obligatoire.')]
     private ?Scan $scan = null;
 
     /** Contenu HTML du rapport */

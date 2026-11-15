@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: FindingRepository::class)]
 #[ORM\Index(columns: ['severity'], name: 'idx_finding_severity')]
@@ -64,6 +65,7 @@ class Finding
 
     #[ORM\ManyToOne(inversedBy: 'findings')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[Assert\NotNull(message: 'Ce champ est obligatoire.')]
     private ?Scan $scan = null;
 
     /** Outil qui a détecté la vulnérabilité */

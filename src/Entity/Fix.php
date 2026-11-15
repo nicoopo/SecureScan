@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\FixRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: FixRepository::class)]
 class Fix
@@ -23,6 +24,7 @@ class Fix
 
     #[ORM\ManyToOne(inversedBy: 'fixes')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[Assert\NotNull(message: 'Ce champ est obligatoire.')]
     private ?Finding $finding = null;
 
     /** 'template' ou 'ai' */
