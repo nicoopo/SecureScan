@@ -5,10 +5,11 @@ namespace App\DataFixtures;
 use App\Entity\Project;
 use App\Entity\Scan;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Persistence\ObjectManager;
 
-class ScanFixtures extends Fixture implements FixtureGroupInterface
+class ScanFixtures extends Fixture implements FixtureGroupInterface, DependentFixtureInterface
 {
     public const SCAN_PHP_REF = 'scan-php';
     public const SCAN_JS_REF  = 'scan-js';
@@ -40,5 +41,10 @@ class ScanFixtures extends Fixture implements FixtureGroupInterface
         }
 
         $manager->flush();
+    }
+
+    public function getDependencies(): array
+    {
+        return [ProjectFixtures::class];
     }
 }
