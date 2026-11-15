@@ -6,10 +6,11 @@ namespace App\DataFixtures;
 use App\Entity\Finding;
 use App\Entity\Scan;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Persistence\ObjectManager;
 
-class FindingFixtures extends Fixture implements FixtureGroupInterface
+class FindingFixtures extends Fixture implements FixtureGroupInterface, DependentFixtureInterface
 {
     public static function getGroups(): array
     {
@@ -20,10 +21,7 @@ class FindingFixtures extends Fixture implements FixtureGroupInterface
     {
         $scanRepo = $manager->getRepository(Scan::class);
 
-        // Récupère les scans par leur projet (on prend le premier scan non-failed de chaque projet)
-        $scanPhp = $scanRepo->findOneBy(['status' => 'pending']) ?? $scanRepo->findAll()[0];
-
-        // Mieux : on les mappe par index d'insertion
+        // Mappe les scans par index d'insertion
         $scans = $scanRepo->findBy(['status' => 'pending']);
 
         // Map ref => scan (dans l'ordre d'insertion : php, js, py)
@@ -323,6 +321,6 @@ class FindingFixtures extends Fixture implements FixtureGroupInterface
 
     public function getDependencies(): array
     {
-        return [];
+        return [ScanFixtures::class];
     }
 }

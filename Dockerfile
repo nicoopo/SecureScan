@@ -1,5 +1,5 @@
 # ── Stage 1 : dépendances Composer ──────────────────────────────────────────
-FROM composer:2.8 AS vendor
+FROM composer:2 AS vendor
 
 WORKDIR /app
 COPY composer.json composer.lock symfony.lock* ./
@@ -52,7 +52,7 @@ RUN apk add --no-cache \
 
 
 # Copier Composer depuis l'image officielle
-COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # ── Semgrep (SAST) ────────────────────────────────────────────────────────────
 RUN pip3 install semgrep --break-system-packages
 

@@ -5,11 +5,11 @@ namespace App\DataFixtures;
 use App\Entity\Project;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
-use Doctrine\Common\DataFixtures\DependencyInterface;
+use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 
-class ProjectFixtures extends Fixture implements FixtureGroupInterface
+class ProjectFixtures extends Fixture implements FixtureGroupInterface, DependentFixtureInterface
 {
     public const PROJECT_PHP_REF  = 'project-php';
     public const PROJECT_JS_REF   = 'project-js';
@@ -65,6 +65,6 @@ class ProjectFixtures extends Fixture implements FixtureGroupInterface
 
     public function getDependencies(): array
     {
-        return [];
+        return [UserFixtures::class];
     }
 }
