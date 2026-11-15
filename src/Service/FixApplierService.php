@@ -59,17 +59,18 @@ class FixApplierService
             return ['applied' => false, 'message' => 'Format de fichier non pris en charge pour une annotation (ex : JSON).'];
         }
 
-        $lines = file($realFilePath, FILE_IGNORE_NEW_LINES);
-        if ($lines === false) {
+        $read = $this->readLines($realFilePath);
+        if ($read === null) {
             return ['applied' => false, 'message' => 'Impossible de lire le fichier.'];
         }
+        [$lines, $eol, $trailingEol] = $read;
 
         $targetIndex = $this->locateInsertionIndex($lines, $fix);
         $annotation = $this->buildAnnotation($fix, $commentStyle);
 
         array_splice($lines, $targetIndex, 0, $annotation);
 
-        if (file_put_contents($realFilePath, implode(PHP_EOL, $lines) . PHP_EOL) === false) {
+        if (file_put_contents($realFilePath, implode($eol, $lines) . ($trailingEol ? $eol : '')) === false) {
             return ['applied' => false, 'message' => "Échec de l'écriture du fichier."];
         }
 
@@ -154,8 +155,9 @@ class FixApplierService
      */
     private function applyJsonAnnotation(Fix $fix, string $realFilePath, string $relativePath): array
     {
-        $lines = file($realFilePath, FILE_IGNORE_NEW_LINES);
-        if ($lines === false || !isset($lines[0]) || !str_contains($lines[0], '{')) {
+        $read = $this->readLines($realFilePath);
+        [$lines, $eol, $trailingEol] = $read ?? [[], "\n", true];
+        if ($read === null || !isset($lines[0]) || !str_contains($lines[0], '{')) {
             return ['applied' => false, 'message' => "Structure JSON inattendue, rien n'a été écrit."];
         }
 
@@ -171,10 +173,33 @@ class FixApplierService
 
         array_splice($lines, 1, 0, [$annotationLine]);
 
-        if (file_put_contents($realFilePath, implode(PHP_EOL, $lines) . PHP_EOL) === false) {
+        if (file_put_contents($realFilePath, implode($eol, $lines) . ($trailingEol ? $eol : '')) === false) {
             return ['applied' => false, 'message' => "Échec de l'écriture du fichier."];
         }
 
         return ['applied' => true, 'message' => "Suggestion insérée en tête de {$relativePath}."];
+    }
+
+    /**
+     * Lit le fichier en conservant sa fin de ligne (CRLF/LF), pour que l'annotation
+     * ne réécrive pas toutes les lignes du fichier dans le diff de la PR.
+     *
+     * @return array{0: string[], 1: string, 2: bool}|null lignes, fin de ligne, newline final
+     */
+    private function readLines(string $path): ?array
+    {
+        $content = file_get_contents($path);
+        if ($content === false) {
+            return null;
+        }
+
+        $eol = str_contains($content, "\r\n") ? "\r\n" : "\n";
+        $trailingEol = $content === '' || str_ends_with($content, "\n");
+        $lines = preg_split('/\r\n|\n/', $content);
+        if ($trailingEol) {
+            array_pop($lines);
+        }
+
+        return [$lines, $eol, $trailingEol];
     }
 }

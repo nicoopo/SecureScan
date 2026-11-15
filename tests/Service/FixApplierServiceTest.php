@@ -50,6 +50,28 @@ class FixApplierServiceTest extends TestCase
         $this->assertStringContainsString('$result = $db->query("SELECT * FROM users WHERE id = " . $id);', $content);
     }
 
+    public function testPreservesCrlfLineEndings(): void
+    {
+        $project = $this->createProject(['index.php' => "<?php\r\n\r\nphpinfo();\r\n"]);
+        $fix     = $this->buildFix($project, 'index.php', lineStart: 3, originalCode: null, proposedCode: '// supprimer');
+
+        $this->assertTrue($this->service->apply($fix)['applied']);
+
+        $content = file_get_contents($project . '/index.php');
+        $this->assertStringStartsWith("<?php\r\n\r\n// [SecureScan]", $content);
+        $this->assertStringEndsWith("\r\nphpinfo();\r\n", $content);
+        $this->assertSame(0, preg_match('/(?<!\r)\n/', $content), 'Aucun LF isolé ne doit être introduit.');
+    }
+
+    public function testKeepsMissingTrailingNewline(): void
+    {
+        $project = $this->createProject(['app.js' => "a();\nb();"]);
+        $fix     = $this->buildFix($project, 'app.js', lineStart: 2, originalCode: null, proposedCode: 'c();');
+
+        $this->assertTrue($this->service->apply($fix)['applied']);
+        $this->assertStringEndsWith("\nb();", file_get_contents($project . '/app.js'));
+    }
+
     public function testUsesHashCommentStyleForPythonFiles(): void
     {
         $project = $this->createProject(['app.py' => "import hashlib\nhashlib.md5(data)\n"]);
