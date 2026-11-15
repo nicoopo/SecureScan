@@ -17,3 +17,7 @@ framework:
         # Namespaced pools use the above "app" backend by default
         #pools:
             #my.dedicated.cache: null
+        pools:
+            # app et worker n'ont pas le même var/cache : le signal de messenger:stop-workers passe par la BDD partagée
+            cache.messenger.restart_workers_signal:
+                adapter: cache.adapter.doctrine_dbal
